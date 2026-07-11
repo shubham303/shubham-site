@@ -1,5 +1,7 @@
 # shubham-site
 
+**Live:** https://shubhamrandive.com
+
 Personal-brand site — a single landing page (bio, photo, links) plus a Markdown blog.
 Built with [Astro](https://astro.build), deployed on Vercel, styled to feel like a clean
 GitHub README. No forms, no tracking, no CSS framework.
