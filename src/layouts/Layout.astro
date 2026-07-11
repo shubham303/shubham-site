@@ -1,0 +1,131 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+const {
+  title,
+  description = 'Shubham Randive — data science as a service for ecommerce brands.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>
+      // Apply saved theme before paint (no flash). Default: light (white).
+      (function () {
+        var t = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle light / dark"></button>
+    <main>
+      <slot />
+    </main>
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('theme-toggle');
+        var root = document.documentElement;
+        function paint() {
+          btn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀' : '☾';
+        }
+        paint();
+        btn.addEventListener('click', function () {
+          var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          paint();
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Deliberately minimal — a clean, GitHub-README feel. Default: light (white).
+     Dark is opt-in via the toggle (persisted in localStorage). */
+  :root {
+    --fg: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --bg: #ffffff;
+    --border: #d0d7de;
+    --code-bg: rgba(129, 139, 152, 0.12);
+  }
+  :root[data-theme='dark'] {
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --accent: #4493f8;
+    --bg: #0d1117;
+    --border: #30363d;
+    --code-bg: rgba(129, 139, 152, 0.15);
+  }
+  * { box-sizing: border-box; }
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+      sans-serif;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 3.5rem 1.25rem 6rem;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1, h2, h3 { line-height: 1.25; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+  code {
+    background: var(--code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow: auto;
+  }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; }
+  blockquote {
+    margin: 1rem 0;
+    padding: 0.2rem 1rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted);
+  }
+</style>

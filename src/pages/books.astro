@@ -1,0 +1,143 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Books / resources worth mentioning. Add to these lists as you read.
+// Swap the Amazon links for your affiliate links if/when you have them.
+const general = [
+  {
+    title: 'The Minimalist Entrepreneur',
+    author: 'Sahil Lavingia',
+    href: 'https://www.amazon.com/Minimalist-Entrepreneur-Great-Founders-More/dp/0593192397',
+    note: 'The nudge behind a lot of how I build: start small, stay profitable, and don’t raise a war chest to sell what a spreadsheet could.',
+  },
+  {
+    title: 'Hi Tar Shrinchi Iccha',
+    author: '',
+    href: 'https://www.bookganga.com/eBooks/Books/Details/5056513656313786403',
+    note: '',
+  },
+  {
+    title: 'Harry Potter (the whole collection)',
+    author: 'J.K. Rowling',
+    href: 'https://www.amazon.in/s?k=Harry+Potter+box+set',
+    note: '',
+  },
+  {
+    title: 'Eka Ranvedyachi Shodhyatra',
+    author: 'Krushnamegh Kunte',
+    href: 'https://www.amazon.in/Eka-Ranvedyachi-Shodhyatra-Krushnamegh-Kunte/dp/8174348034?s=bazaar',
+    note: '',
+  },
+];
+
+const tech = [
+  {
+    title: 'Designing Data-Intensive Applications',
+    author: 'Martin Kleppmann',
+    href: 'https://www.amazon.in/s?k=Designing+Data-Intensive+Applications',
+    note: '',
+  },
+  {
+    title: 'Fluent Python',
+    author: 'Luciano Ramalho',
+    href: 'https://www.amazon.in/s?k=Fluent+Python',
+    note: '',
+  },
+  {
+    title: 'Deep Learning — lecture series',
+    author: 'Mitesh Khapra (IIT Madras)',
+    href: 'https://www.youtube.com/results?search_query=Mitesh+Khapra+Deep+Learning',
+    note: 'Free lectures on YouTube — one of the clearest deep learning courses out there.',
+  },
+  {
+    title: 'API Security in Action',
+    author: 'Neil Madden',
+    href: 'https://www.amazon.in/s?k=API+Security+in+Action',
+    note: '',
+  },
+  {
+    title: 'SEO — Ahrefs guides',
+    author: 'Ahrefs',
+    href: 'https://ahrefs.com/seo',
+    note: 'Where I go to (occasionally) understand what search engines actually want.',
+  },
+  {
+    title: 'AI Engineering',
+    author: 'Chip Huyen',
+    href: 'https://www.amazon.in/s?k=AI+Engineering+Chip+Huyen',
+    note: '',
+  },
+  {
+    title: 'Recommender Systems: The Textbook',
+    author: 'Charu C. Aggarwal',
+    href: 'https://www.amazon.in/Recommender-Systems-Textbook-Charu-Aggarwal/dp/3319296574',
+    note: '',
+  },
+];
+---
+
+<Layout title="Books — Shubham Randive" description="Books and resources that shaped how I think and work.">
+  <p class="back"><a href="/">← Home</a></p>
+
+  <h1>Books</h1>
+  <p class="intro">
+    Books and resources that shaped how I think, work, or procrastinate. More as I finish
+    (and actually retain) them.
+  </p>
+
+  <h2>General</h2>
+  <ul class="book-list">
+    {
+      general.map((b) => (
+        <li>
+          <a href={b.href} rel="noopener">{b.title}</a>
+          {b.author && <span class="author"> — {b.author}</span>}
+          {b.note && <p class="note">{b.note}</p>}
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2>Tech &amp; tools</h2>
+  <ul class="book-list">
+    {
+      tech.map((b) => (
+        <li>
+          <a href={b.href} rel="noopener">{b.title}</a>
+          {b.author && <span class="author"> — {b.author}</span>}
+          {b.note && <p class="note">{b.note}</p>}
+        </li>
+      ))
+    }
+  </ul>
+</Layout>
+
+<style>
+  .back {
+    margin-bottom: 1.5rem;
+  }
+  .intro {
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+  h2 {
+    margin-top: 2.5rem;
+  }
+  .book-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .book-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .author {
+    color: var(--muted);
+  }
+  .note {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+    font-size: 0.95em;
+  }
+</style>
