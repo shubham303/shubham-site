@@ -1,23 +1,25 @@
 ---
-title: "What the tipping data actually says (and what servers get wrong)"
+title: "I pointed one AI agent at ten public datasets — here's what it found"
 date: 2026-07-18
-description: "I pointed an AI data agent at a classic restaurant tipping dataset. One factor explains almost the entire tip — and it isn't the one waiters swear by."
+description: "One unchanged pipeline — load, profile, test, model, explain — run across ten different open datasets. Each section is the plain-language report the agent produced."
 ---
 
-> Worked example on a **public, open dataset** — no client or private data. This is the
+> Worked examples on **public, open datasets** — no client or private data. This is the
 > shareable version of the kind of analysis I run privately on real business data.
 
-Ask a waiter what makes a table tip well and you'll hear a theory: the Saturday crowd,
-the dinner rush, a certain kind of guest. I wanted to see whether any of it survives
-contact with the data. So I handed a small, well-known tipping dataset to an AI agent I've
-been building — it loads the table, profiles it, tests every relationship, and models what
-drives the outcome, then hands back the finding in plain language.
+I've been building a data agent that does the boring-but-hard part of analysis on its own:
+it loads a table, profiles every column, tests which relationships are real, models the
+outcome you care about, and then — the part that actually matters — translates all of that
+into a few sentences a decision-maker can use. No dashboards, no notebook full of charts to
+interpret. One question in, one clear answer out.
 
-The answer is almost boringly clean: **the tip is the check.** How much a table spends
-explains nearly all of how much it tips. Everything else — the night, the shift, party
-size, whether anyone smoked, the guest's gender — is either noise or a rounding error.
+To show what that looks like, I ran the *same pipeline, unchanged* across ten well-known
+public datasets — restaurants, real estate, cars, wine, biology, the economy. Each section
+below is the report the agent handed back, formatted exactly as it produces them. The point
+isn't any single finding; it's that the same machine gets to a usable answer on wildly
+different data.
 
-Here's the report the agent produced, unedited in substance:
+## 1. Restaurant tipping — what actually decides the tip
 
 <div class="tir">
   <style>
@@ -94,15 +96,11 @@ Here's the report the agent produced, unedited in substance:
   </div>
 </div>
 
-The useful part isn't the chart — it's what it kills. The whole folklore of the "good
-table" mostly evaporates. If tip income is what you care about, the lever is check size:
-one starter, one more round, one dessert moves it more than any amount of schedule
-optimisation. Party size looks like it matters, but mostly because bigger parties spend
-more — it's the bill doing the work again.
+The whole folklore of the "good table" mostly evaporates. If tip income is what you care
+about, the lever is check size — one starter, one more round — not the night or the shift.
+Party size looks like it matters, but mostly because bigger parties spend more.
 
-That's the pattern I keep seeing in this kind of work: the honest answer is usually simpler
-than the one people expect, and it points at a decision you can actually act on. The point
-of the agent isn't a cleverer model — it's getting to that one sentence fast, on any table
-you give it.
+---
 
-*I'm a data scientist — if you've got a pile of data and a decision hiding in it, [get in touch](mailto:randiveshubham3@gmail.com).*
+*More sections coming — real estate, diamonds, cars, wine, and more. I'm a data scientist:
+if you've got a pile of data and a decision hiding in it, [get in touch](mailto:randiveshubham3@gmail.com).*
