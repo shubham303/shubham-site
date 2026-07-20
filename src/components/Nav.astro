@@ -1,0 +1,65 @@
+---
+// Shared top navigation for the marketing/content tabs.
+interface Props { active?: string }
+const { active } = Astro.props;
+const tabs = [
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Docs', href: '/docs' },
+  { label: 'Pricing', href: '/pricing' },
+];
+---
+<header class="ti-nav">
+  <div class="ti-nav-row">
+    <a href="/" class="ti-brand">▚ Table Intelligence</a>
+    <nav class="ti-links">
+      {tabs.map((t) => (
+        <a href={t.href} class={active === t.label ? 'on' : ''}>{t.label}</a>
+      ))}
+      <a href="/login" class="ti-signin">Sign in</a>
+      <a href="/signup" class="ti-cta">Start free</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .ti-nav {
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .ti-nav-row {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .ti-brand { font-weight: 700; color: var(--fg); letter-spacing: -0.01em; white-space: nowrap; }
+  .ti-brand:hover { text-decoration: none; }
+  .ti-links { display: flex; align-items: center; gap: 1.05rem; }
+  .ti-links a { color: var(--muted); font-size: 0.94rem; }
+  .ti-links a:hover { color: var(--fg); text-decoration: none; }
+  .ti-links a.on { color: var(--fg); font-weight: 600; }
+  .ti-cta {
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff !important;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .ti-cta:hover { filter: brightness(1.05); text-decoration: none !important; }
+  @media (max-width: 620px) {
+    .ti-links { gap: 0.7rem; }
+    .ti-links a.ti-signin,
+    .ti-links a:not(.on):not(.ti-cta):not(.ti-signin) { display: none; }
+  }
+</style>
