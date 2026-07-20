@@ -1,7 +1,5 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
 import type { Database } from './database';
-import { DuckDBDatabase, PostgresDatabase } from './database';
+import { PostgresDatabase } from './database';
 import { UsersRepository } from '../repositories/users';
 import { ApiKeysRepository } from '../repositories/apiKeys';
 import { SubscriptionsRepository } from '../repositories/subscriptions';
@@ -17,14 +15,14 @@ let db: Database | null = null;
 
 function createDatabase(): Database {
   const url = process.env.DATABASE_URL?.trim();
-  if (url && /^postgres/i.test(url)) return new PostgresDatabase(url);
-  const path = process.env.TABINT_CONTROL_DB?.trim() || './.data/control.duckdb';
-  try {
-    mkdirSync(dirname(path), { recursive: true });
-  } catch {
-    /* ignore */
+  if (!url || !/^postgres/i.test(url)) {
+    throw new Error(
+      'DATABASE_URL is not set (or is not a postgres:// URL). Set it to your ' +
+      'Supabase connection string in .env (local) and in the Vercel project (prod). ' +
+      'See SUPABASE.md.',
+    );
   }
-  return new DuckDBDatabase(path);
+  return new PostgresDatabase(url);
 }
 
 /** Facade over the repositories; services take this and stay DB-agnostic. */

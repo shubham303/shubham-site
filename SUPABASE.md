@@ -1,31 +1,37 @@
-# Supabase (production database)
+# Supabase (the database)
 
-A dedicated Supabase project has been provisioned and the full schema applied
+The app uses **one Supabase Postgres database for both local dev and production**,
+configured entirely through environment variables (no local DuckDB). The schema
 (users, api_keys, subscriptions, folders, reports + outreach: outreach_templates,
-campaigns, prospects, sent_emails, received_emails).
+campaigns, prospects, sent_emails, received_emails) is already applied.
 
-- **Project name:** `table-intelligence`
-- **Project ref:** `acjwlglurtqxkazdeehn`
-- **Region:** ap-south-1 (Mumbai)
+- **Project:** `table-intelligence` · ref `acjwlglurtqxkazdeehn` · ap-south-1 · Free
 - **API URL:** https://acjwlglurtqxkazdeehn.supabase.co
-- **Plan:** Free ($0/mo)
+- **Direct host:** db.acjwlglurtqxkazdeehn.supabase.co
+- **Pooler host:** aws-0-ap-south-1.pooler.supabase.com
 
-## Wire it to the deployed site
+## Get the connection string (one-time, needs the DB password)
 
-The app's DB facade uses **DuckDB locally** (no setup) and **Postgres when
-`DATABASE_URL` is set**. Supabase is Postgres, so going live is just an env var.
+1. Supabase dashboard → **table-intelligence** project → **Connect** (top bar).
+2. Choose **Session pooler** → copy the URI. It looks like:
+   `postgresql://postgres.acjwlglurtqxkazdeehn:[PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`
+3. If you don't know the password: **Settings → Database → Reset database password**,
+   then use the new one. Append `?sslmode=require` to the URI.
 
-1. Supabase dashboard → this project → **Settings → Database → Connection string**.
-   Copy the **Session pooler** string (recommended for Vercel serverless), and make
-   sure it ends with `?sslmode=require`. You'll paste in the DB password from the
-   same page (reset it there if you don't have it).
-2. In Vercel (shubham-site project) → Settings → Environment Variables, set:
-   - `DATABASE_URL` = the pooler connection string
-   - `SESSION_SECRET` = a long random string
-   - (later) `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`
-3. Redeploy. `ensureInit()` will no-op against the already-created tables; the app
-   now reads/writes Supabase.
+## Local
 
-> Local dev keeps using DuckDB (`.data/control.duckdb`) — nothing to configure.
-> If Supabase's pooler throws prepared-statement errors, add `prepare: false` to
-> the postgres.js options in `src/server/db/database.ts`.
+Create `shubham-site/.env` (gitignored) from `.env.example`:
+
+```
+DATABASE_URL=postgresql://postgres.acjwlglurtqxkazdeehn:...@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require
+SESSION_SECRET=<long random string>
+```
+
+Then `npm run dev` — it now reads/writes Supabase.
+
+## Production (Vercel)
+
+Set the same `DATABASE_URL` and `SESSION_SECRET` (and later the Razorpay keys) in
+the shubham-site Vercel project's Environment Variables, then redeploy.
+
+> The DB facade throws a clear error if `DATABASE_URL` is missing.
