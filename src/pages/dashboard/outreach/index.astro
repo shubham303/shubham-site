@@ -1,0 +1,104 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { ensureInit } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { listPrompts, listProspects } from '@server/services/outreachService';
+import { getEmailAccount } from '@server/services/emailService';
+
+export const prerender = false;
+
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const tier = await tierForUser(uid);
+const prompts = await listPrompts(uid);
+const prospects = await listProspects(uid);
+const email = await getEmailAccount(uid);
+---
+<Layout title="Outreach — Table Intelligence">
+  <h1>Outreach</h1>
+  <p><a href="/dashboard">&larr; Dashboard</a> &middot; plan: <strong>{tier}</strong></p>
+
+  {tier !== 'paid' && tier !== 'trial' && (
+    <p style="padding:.6rem;border:1px solid var(--border);border-radius:6px">
+      Outreach is a premium connector. <a href="/pricing">Start a trial or upgrade</a> to use it.
+    </p>
+  )}
+
+  <h2 style="margin-top:1.5rem">Sending email</h2>
+  {email.connected ? (
+    <p><small>Connected: <strong>{email.from_email}</strong> via {email.provider}.</small></p>
+  ) : (
+    <p><small>No sending account connected yet.</small></p>
+  )}
+  <form id="ef" style="display:grid;gap:.4rem;max-width:420px">
+    <input id="from_email" placeholder="From email (your verified domain)"
+      style="padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)" />
+    <input id="from_name" placeholder="From name (optional)"
+      style="padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)" />
+    <input id="api_key" type="password" placeholder="Resend API key (rk_…)"
+      style="padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)" />
+    <button style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer">Save sending account</button>
+  </form>
+
+  <h2 style="margin-top:2rem">Prompts ({prompts.length})</h2>
+  {prompts.length === 0 && <p><small>No outreach prompts yet. Ask your AI agent to create one.</small></p>}
+  <ul>{prompts.map((p) => <li><strong>{p.name}</strong></li>)}</ul>
+
+  <h2 style="margin-top:2rem">Prospects ({prospects.length})</h2>
+  {prospects.length === 0 && (
+    <p><small>No prospects yet. In your AI agent, ask Table Intelligence to research prospects and
+      draft outreach — they'll appear here to review before you send.</small></p>
+  )}
+  {prospects.length > 0 && (
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr>
+        <th style="text-align:left;border-bottom:1px solid var(--border);padding:.4rem">Name</th>
+        <th style="text-align:left;border-bottom:1px solid var(--border);padding:.4rem">Email</th>
+        <th style="text-align:left;border-bottom:1px solid var(--border);padding:.4rem">Status</th>
+        <th style="border-bottom:1px solid var(--border);padding:.4rem"></th>
+      </tr></thead>
+      <tbody>
+        {prospects.map((p) => (
+          <tr>
+            <td style="padding:.4rem;border-bottom:1px solid var(--border)">{p.name || '—'}<br/><small style="color:var(--muted)">{p.company || ''}</small></td>
+            <td style="padding:.4rem;border-bottom:1px solid var(--border)">{p.email || '—'}</td>
+            <td style="padding:.4rem;border-bottom:1px solid var(--border)">{p.status}</td>
+            <td style="padding:.4rem;border-bottom:1px solid var(--border);text-align:right">
+              {p.status !== 'sent' && p.status !== 'replied' && (
+                <button class="send" data-id={p.id}
+                  style="padding:.25rem .5rem;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;cursor:pointer">Send</button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+
+  <script is:inline>
+    document.getElementById('ef').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        from_email: document.getElementById('from_email').value,
+        from_name: document.getElementById('from_name').value,
+        api_key: document.getElementById('api_key').value,
+      };
+      const r = await fetch('/api/outreach/email-account', {
+        method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+      });
+      alert(r.ok ? 'Sending account saved.' : 'Could not save — check the fields.');
+      if (r.ok) location.reload();
+    });
+    document.querySelectorAll('.send').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Sending…';
+        const r = await fetch(`/api/outreach/prospects/${btn.dataset.id}/send`, { method: 'POST' });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.ok) { location.reload(); }
+        else { btn.disabled = false; btn.textContent = 'Send'; alert(d.message || 'Send failed.'); }
+      });
+    });
+  </script>
+</Layout>

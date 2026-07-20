@@ -46,6 +46,15 @@ list on the home page, sorted newest-first.
 2. In Vercel: New Project → import the repo. Vercel auto-detects Astro — no config needed.
 3. Add your custom domain in the project's Domains settings.
 
+## Roadmap / planned
+
+- **Newsletter (Buttondown + RSS-to-email).** Own the subscriber list (exportable, unlike
+  Substack) and auto-email subscribers whenever a new post publishes. Steps when ready:
+  1. Add an RSS feed to the site (`@astrojs/rss`) — the trigger Buttondown watches.
+  2. Create a Buttondown account and connect it to the feed for RSS-to-email.
+  3. Add a "Subscribe" link (to Buttondown's hosted page) or embed its form in
+     `src/pages/index.astro`.
+
 ## Content rules
 
 Only publish open-dataset or anonymized findings — never a named prospect's teardown or any

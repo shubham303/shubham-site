@@ -1,0 +1,71 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ensureInit, getProvider } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { listFolders, listReports } from '@server/services/reportService';
+
+export const prerender = false;
+
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const user = await getProvider().users.getById(uid);
+const tier = await tierForUser(uid);
+const folders = await listFolders(uid);
+const reports = await listReports(uid);
+---
+<Layout title="Dashboard — Table Intelligence">
+  <h1>Your dashboard</h1>
+  <p>
+    {user?.email} &middot; plan: <strong>{tier}</strong>
+    {tier !== 'paid' && (
+      <button id="up" style="margin-left:.5rem;padding:.3rem .6rem;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;cursor:pointer">Upgrade to premium</button>
+    )}
+    <a href="#" id="logout" style="margin-left:.75rem"><small>Log out</small></a>
+  </p>
+
+  <h2>Folders</h2>
+  {folders.length === 0 && <p><small>No folders yet.</small></p>}
+  <ul>{folders.map((f) => <li>{f.name}</li>)}</ul>
+  <form id="nf" style="display:flex;gap:.4rem;max-width:340px">
+    <input id="fname" placeholder="New folder name"
+      style="flex:1;padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)" />
+    <button style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer">Create</button>
+  </form>
+
+  <h2 style="margin-top:2rem">Reports</h2>
+  {reports.length === 0 && (
+    <p><small>No reports yet. In your AI agent, run an analysis with Table Intelligence and ask it to
+      <em>save a report</em> — it'll show up here.</small></p>
+  )}
+  <ul>
+    {reports.map((r) => (
+      <li>
+        <a href={`/dashboard/reports/${r.id}`}>{r.title}</a>
+        <small style="color:var(--muted)"> &middot; {new Date(r.created_at).toLocaleString()}{r.shared ? ' · shared' : ''}</small>
+      </li>
+    ))}
+  </ul>
+
+  <script is:inline>
+    const up = document.getElementById('up');
+    if (up) up.addEventListener('click', async () => {
+      up.disabled = true; up.textContent = 'Upgrading…';
+      await fetch('/api/billing/checkout', { method: 'POST' });
+      location.reload();
+    });
+    document.getElementById('nf').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('fname').value;
+      if (!name) return;
+      await fetch('/api/folders', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }) });
+      location.reload();
+    });
+    document.getElementById('logout').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.href = '/login';
+    });
+  </script>
+</Layout>

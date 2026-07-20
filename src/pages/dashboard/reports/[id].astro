@@ -1,0 +1,41 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { ensureInit } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { getReport } from '@server/services/reportService';
+
+export const prerender = false;
+
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const report = await getReport(uid, String(Astro.params.id));
+if (!report) return new Response('Report not found', { status: 404 });
+---
+<Layout title={report.title}>
+  <p><a href="/dashboard">&larr; Dashboard</a></p>
+  <h1>{report.title}</h1>
+  <p><small style="color:var(--muted)">{new Date(report.created_at).toLocaleString()}</small></p>
+  <pre style="white-space:pre-wrap">{report.content}</pre>
+  <button id="share" data-id={report.id} data-token={report.share_token ?? ''}
+    style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer">
+    {report.shared ? 'Sharing on — show link' : 'Share (create public link)'}
+  </button>
+  <p id="link"></p>
+  <script is:inline>
+    const btn = document.getElementById('share');
+    const link = document.getElementById('link');
+    function showLink(t) {
+      if (t) link.innerHTML = 'Public link: <code>' + location.origin + '/r/' + t + '</code>';
+    }
+    showLink(btn.dataset.token);
+    btn.addEventListener('click', async () => {
+      const r = await fetch('/api/reports/' + btn.dataset.id + '/share', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ share: true }),
+      });
+      const d = await r.json();
+      showLink(d.share_token);
+      btn.textContent = 'Sharing on — link below';
+    });
+  </script>
+</Layout>

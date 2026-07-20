@@ -1,0 +1,24 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ensureInit } from '@server/db/factory';
+import { getSharedReport } from '@server/services/reportService';
+
+export const prerender = false;
+
+await ensureInit();
+const report = await getSharedReport(String(Astro.params.token));
+---
+{report ? (
+  <Layout title={report.title}>
+    <h1>{report.title}</h1>
+    <p><small style="color:var(--muted)">Shared report &middot; {new Date(report.created_at).toLocaleString()}</small></p>
+    <pre style="white-space:pre-wrap">{report.content}</pre>
+    <hr />
+    <p><small>Made with <a href="/product">Table Intelligence</a></small></p>
+  </Layout>
+) : (
+  <Layout title="Report not found">
+    <h1>Report not found</h1>
+    <p>This share link is invalid or has been turned off.</p>
+  </Layout>
+)}

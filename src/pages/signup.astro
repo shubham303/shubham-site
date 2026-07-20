@@ -1,0 +1,173 @@
+---
+import Layout from '../layouts/Layout.astro';
+export const prerender = false;
+---
+<Layout title="Sign up — Table Intelligence">
+  <div class="auth">
+    <div class="auth-card">
+      <p class="auth-brand">Table Intelligence</p>
+      <h1>Create your account</h1>
+      <p class="auth-sub">3-day free trial — no card required.</p>
+
+      <ul class="auth-perks">
+        <li>Analytics run locally — your raw data never leaves your machine</li>
+        <li>Save reports &amp; run outreach from your AI agent</li>
+        <li>Cancel anytime</li>
+      </ul>
+
+      <form id="f" class="auth-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="new-password" placeholder="At least 6 characters" minlength="6" required />
+        </div>
+        <button type="submit" id="submit">Create account</button>
+      </form>
+
+      <p id="msg" class="auth-msg"></p>
+
+      <div id="done" class="auth-done" style="display:none">
+        <p class="auth-done-h">✓ Account created</p>
+        <p class="auth-sub">Copy your MCP API key now — it's shown <strong>only once</strong>:</p>
+        <div class="key-row">
+          <code id="key"></code>
+          <button type="button" id="copy" class="copy-btn">Copy</button>
+        </div>
+        <p class="auth-next">
+          <a href="/docs/install">Install the MCP server →</a>
+          <a href="/dashboard">Go to dashboard →</a>
+        </p>
+      </div>
+    </div>
+    <p class="auth-alt"><small>Already have an account? <a href="/login">Log in</a></small></p>
+  </div>
+
+  <script is:inline>
+    const f = document.getElementById('f');
+    const btn = document.getElementById('submit');
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('msg').textContent = '';
+      btn.disabled = true; btn.textContent = 'Creating…';
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const r = await fetch('/api/auth/signup', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        document.getElementById('msg').textContent = d.error || 'Something went wrong.';
+        btn.disabled = false; btn.textContent = 'Create account';
+        return;
+      }
+      document.getElementById('key').textContent = d.apiKey;
+      f.style.display = 'none';
+      document.getElementById('done').style.display = 'block';
+    });
+    document.getElementById('copy').addEventListener('click', async () => {
+      const key = document.getElementById('key').textContent;
+      try { await navigator.clipboard.writeText(key); document.getElementById('copy').textContent = 'Copied'; }
+      catch { document.getElementById('copy').textContent = 'Copy failed'; }
+    });
+  </script>
+
+  <style>
+    .auth { max-width: 400px; margin: 1.5rem auto 0; }
+    .auth-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem 1.75rem 1.75rem;
+      background: var(--bg);
+      box-shadow: 0 1px 3px rgba(20, 25, 40, 0.05);
+    }
+    .auth-brand {
+      margin: 0 0 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .auth h1 { font-size: 1.5rem; margin: 0 0 0.3rem; }
+    .auth-sub { margin: 0 0 1rem; color: var(--muted); font-size: 0.95rem; }
+    .auth-perks {
+      list-style: none;
+      margin: 0 0 1.5rem;
+      padding: 0;
+      display: grid;
+      gap: 0.4rem;
+    }
+    .auth-perks li {
+      position: relative;
+      padding-left: 1.4rem;
+      font-size: 0.88rem;
+      color: var(--fg);
+    }
+    .auth-perks li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .auth-form { display: grid; gap: 1rem; }
+    .field { display: grid; gap: 0.3rem; }
+    .field label { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+    .field input {
+      padding: 0.6rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.95rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+    .auth button[type='submit'] {
+      margin-top: 0.25rem;
+      padding: 0.65rem;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .auth button[type='submit']:hover { opacity: 0.92; }
+    .auth button[type='submit']:disabled { opacity: 0.6; cursor: default; }
+    .auth-msg { color: #cf222e; font-size: 0.88rem; min-height: 1.1rem; margin: 0.9rem 0 0; }
+    .auth-done-h { font-weight: 700; color: #1a7f37; margin: 0 0 0.5rem; }
+    .key-row { display: flex; gap: 0.5rem; align-items: stretch; margin: 0.5rem 0 1rem; }
+    .key-row code {
+      flex: 1;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+    }
+    .copy-btn {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .copy-btn:hover { border-color: var(--accent); }
+    .auth-next { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0; }
+    .auth-alt { text-align: center; margin-top: 1.25rem; color: var(--muted); }
+  </style>
+</Layout>

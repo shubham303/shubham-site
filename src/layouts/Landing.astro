@@ -1,0 +1,121 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+const {
+  title,
+  description = 'Table Intelligence — real, defensible data analysis inside your AI agent. Local-first; your data never leaves your machine.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>
+      (function () {
+        var t = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle light / dark"></button>
+    <slot />
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('theme-toggle');
+        var root = document.documentElement;
+        function paint() { btn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀' : '☾'; }
+        paint();
+        btn.addEventListener('click', function () {
+          var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          paint();
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Same palette/feel as shubhamrandive.com — light default, dark opt-in. */
+  :root {
+    --fg: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --accent-fg: #ffffff;
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --border: #d0d7de;
+    --code-bg: rgba(129, 139, 152, 0.12);
+  }
+  :root[data-theme='dark'] {
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --accent: #4493f8;
+    --accent-fg: #0d1117;
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --border: #30363d;
+    --code-bg: rgba(129, 139, 152, 0.15);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; }
+  code {
+    background: var(--code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  pre {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 1rem 1.1rem;
+    border-radius: 10px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .theme-toggle {
+    position: fixed; top: 1rem; right: 1rem; z-index: 20;
+    width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 1rem; line-height: 1; cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  /* ---- landing utilities ---- */
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .6rem 1.1rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--fg); font-weight: 500; cursor: pointer;
+  }
+  .btn:hover { text-decoration: none; border-color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .muted { color: var(--muted); }
+</style>

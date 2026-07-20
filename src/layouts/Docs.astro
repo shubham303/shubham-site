@@ -1,0 +1,140 @@
+---
+const { frontmatter } = Astro.props;
+const title: string = frontmatter?.title ?? 'Documentation';
+const path = Astro.url.pathname.replace(/\/$/, '');
+const nav = [
+  { href: '/docs', label: 'Overview' },
+  { href: '/docs/install', label: 'Install' },
+  { href: '/docs/quickstart', label: 'Quickstart' },
+  { href: '/docs/tools', label: 'Tools reference' },
+  { href: '/docs/reports', label: 'Reports & dashboard' },
+  { href: '/docs/privacy', label: 'Privacy & data' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} — Table Intelligence docs</title>
+    <meta name="description" content={`${title} — Table Intelligence documentation.`} />
+    <link rel="icon" href="/favicon.svg" />
+    <script is:inline>
+      (function () {
+        var t = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+  </head>
+  <body>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle light / dark"></button>
+    <header class="dnav">
+      <div class="dnav-row">
+        <a href="/table-intelligence" class="brand">▚ Table Intelligence</a>
+        <nav class="dnav-links">
+          <a href="/table-intelligence">Product</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/">Profile</a>
+          <a href="/signup" class="pill">Start free</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="side">
+        <p class="side-h">Documentation</p>
+        <nav>
+          {nav.map((n) => (
+            <a href={n.href} class={path === n.href ? 'active' : ''}>{n.label}</a>
+          ))}
+        </nav>
+      </aside>
+      <main class="content">
+        <slot />
+        <hr />
+        <p class="muted"><small>Table Intelligence — built by <a href="/">Shubham Randive</a>. Questions? <a href="/">Get in touch</a>.</small></p>
+      </main>
+    </div>
+
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('theme-toggle');
+        var root = document.documentElement;
+        function paint() { btn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀' : '☾'; }
+        paint();
+        btn.addEventListener('click', function () {
+          var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          paint();
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --fg: #1f2328; --muted: #656d76; --accent: #0969da; --accent-fg: #ffffff;
+    --bg: #ffffff; --bg-soft: #f6f8fa; --border: #d0d7de; --code-bg: rgba(129,139,152,0.12);
+  }
+  :root[data-theme='dark'] {
+    --fg: #e6edf3; --muted: #8b949e; --accent: #4493f8; --accent-fg: #0d1117;
+    --bg: #0d1117; --bg-soft: #161b22; --border: #30363d; --code-bg: rgba(129,139,152,0.15);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .muted { color: var(--muted); }
+  code { background: var(--code-bg); padding: .15em .35em; border-radius: 4px; font-size: .9em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre { background: var(--bg-soft); border: 1px solid var(--border); padding: 1rem 1.1rem;
+    border-radius: 10px; overflow: auto; font-size: .85rem; line-height: 1.55; }
+  pre code { background: none; padding: 0; }
+  .theme-toggle { position: fixed; top: 1rem; right: 1rem; z-index: 20; width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center; background: var(--bg);
+    color: var(--fg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+
+  .dnav { border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); }
+  .dnav-row { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; height: 58px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-weight: 700; color: var(--fg); }
+  .brand:hover { text-decoration: none; }
+  .dnav-links { display: flex; align-items: center; gap: 1.1rem; }
+  .dnav-links a { color: var(--muted); font-size: .93rem; }
+  .dnav-links a:hover { color: var(--fg); text-decoration: none; }
+  .pill { padding: .35rem .75rem; border: 1px solid var(--accent); background: var(--accent);
+    color: var(--accent-fg) !important; border-radius: 7px; }
+
+  .shell { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; display: grid;
+    grid-template-columns: 220px 1fr; gap: 2.5rem; align-items: start; }
+  .side { position: sticky; top: 78px; padding-top: 2rem; }
+  .side-h { text-transform: uppercase; letter-spacing: .07em; font-size: .72rem; font-weight: 700;
+    color: var(--muted); margin: 0 0 .6rem; }
+  .side nav { display: flex; flex-direction: column; gap: .1rem; }
+  .side nav a { color: var(--muted); padding: .35rem .6rem; border-radius: 7px; font-size: .93rem; }
+  .side nav a:hover { color: var(--fg); background: var(--bg-soft); text-decoration: none; }
+  .side nav a.active { color: var(--fg); background: var(--bg-soft); font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent); }
+
+  .content { max-width: 720px; padding: 2rem 0 5rem; min-width: 0; }
+  .content h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 .6rem; }
+  .content h2 { font-size: 1.35rem; margin: 2.2rem 0 .6rem; padding-top: .4rem; }
+  .content h3 { font-size: 1.08rem; margin: 1.6rem 0 .4rem; }
+  .content table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
+  .content th, .content td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; font-size: .93rem; }
+  .content th { background: var(--bg-soft); }
+  .content blockquote { margin: 1rem 0; padding: .3rem 1rem; border-left: 3px solid var(--accent); color: var(--muted); }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0 1.2rem; }
+
+  @media (max-width: 820px) {
+    .shell { grid-template-columns: 1fr; gap: 0; }
+    .side { position: static; padding-top: 1.2rem; }
+    .side nav { flex-flow: row wrap; gap: .3rem; }
+    .content { padding-top: 1rem; }
+  }
+</style>
