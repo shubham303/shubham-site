@@ -1,0 +1,91 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { ensureInit, getProvider } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { listCampaigns, listTemplates } from '@server/services/outreachService';
+
+export const prerender = false;
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const user = await getProvider().users.getById(uid);
+const tier = await tierForUser(uid);
+const campaigns = await listCampaigns(uid);
+const templates = await listTemplates(uid, { status: 'active' });
+const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+---
+<DashboardLayout active="campaigns" email={user?.email} tier={tier} title="Campaigns — Table Intelligence">
+  <div class="head"><h1>Campaigns</h1><span class="count">{campaigns.length}</span>
+    <div class="ml newc">
+      <select id="tpl-select">
+        <option value="">Start from template…</option>
+        {templates.map((t) => <option value={t.id}>{t.title}</option>)}
+      </select>
+      <button class="btn-primary" id="start-btn" disabled>New campaign</button>
+    </div>
+  </div>
+  <p class="muted">Each campaign run researches prospects and drafts emails against a frozen copy of a
+    template's prompt. Open one to review the drafted emails.</p>
+
+  {templates.length === 0 && (
+    <p class="hint">You need an <a href="/dashboard/outreach/templates">active template</a> before starting a campaign.</p>
+  )}
+
+  {campaigns.length === 0 ? (
+    <div class="empty">No campaigns yet.</div>
+  ) : (
+    <ul class="clist">
+      {campaigns.map((c) => (
+        <li><a class="ccard" href={`/dashboard/outreach/campaigns/${c.id}`}>
+          <span class="ccard-main">
+            <span class="ccard-title">{c.title || 'Untitled campaign'}</span>
+            <span class="ccard-meta">{fmt(c.created_at)} · <span class={`badge badge-${c.status}`}>{c.status}</span></span>
+          </span>
+          <span class="ccard-stats">
+            <span class="stat"><b>{c.email_count}</b> prospects</span>
+            <span class="stat"><b>{c.sent_count}</b> sent</span>
+          </span>
+          <span class="ccard-go">→</span>
+        </a></li>
+      ))}
+    </ul>
+  )}
+
+  <script is:inline>
+    const sel = document.getElementById('tpl-select'), btn = document.getElementById('start-btn');
+    sel.addEventListener('change', () => { btn.disabled = !sel.value; });
+    btn.addEventListener('click', async () => {
+      if (!sel.value) return; btn.disabled = true; btn.textContent = 'Creating…';
+      const r = await fetch('/api/outreach/campaigns', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ template_id: sel.value }) });
+      const d = await r.json().catch(()=>({}));
+      if (r.ok && d.id) location.href = `/dashboard/outreach/campaigns/${d.id}`;
+      else { btn.disabled=false; btn.textContent='New campaign'; alert(d.message || d.error || 'Failed.'); }
+    });
+  </script>
+
+  <style>
+    .head { display:flex; align-items:center; gap:0.6rem; margin:0 0 0.3rem; flex-wrap:wrap; }
+    .head h1 { margin:0; font-size:1.6rem; } .ml { margin-left:auto; }
+    .newc { display:flex; gap:0.5rem; }
+    .newc select { padding:0.45rem 0.6rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--fg); }
+    .muted { color:var(--muted); font-size:0.92rem; }
+    .hint { padding:0.7rem 0.9rem; border:1px solid var(--border); border-radius:8px; font-size:0.9rem; }
+    .count { font-size:0.72rem; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0.05rem 0.5rem; }
+    .empty { border:1px dashed var(--border); border-radius:14px; padding:2rem; text-align:center; margin-top:1.2rem; color:var(--muted); }
+    .clist { list-style:none; padding:0; margin:1.4rem 0 0; display:grid; gap:0.7rem; }
+    .ccard { display:flex; align-items:center; gap:1.2rem; padding:1.1rem 1.2rem; border:1px solid var(--border); border-radius:12px; color:var(--fg); transition:border-color .15s; }
+    .ccard:hover { border-color:var(--accent); text-decoration:none; }
+    .ccard-main { flex:1; display:grid; gap:0.3rem; }
+    .ccard-title { font-weight:600; font-size:1.05rem; }
+    .ccard-meta { font-size:0.83rem; color:var(--muted); }
+    .ccard-stats { display:flex; gap:1.2rem; font-size:0.85rem; color:var(--muted); }
+    .stat b { color:var(--fg); }
+    .ccard-go { color:var(--muted); }
+    .ccard:hover .ccard-go { color:var(--accent); }
+    .badge { text-transform:uppercase; font-size:0.62rem; font-weight:700; padding:0.1rem 0.5rem; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
+    .badge-active { color:#1a7f37; border-color:#1a7f37; }
+    .btn-primary { padding:0.5rem 1rem; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-primary:hover { filter:brightness(1.05); } .btn-primary:disabled { opacity:0.5; cursor:default; }
+  </style>
+</DashboardLayout>

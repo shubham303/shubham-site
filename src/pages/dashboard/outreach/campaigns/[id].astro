@@ -1,0 +1,149 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import { ensureInit, getProvider } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { getCampaign } from '@server/services/outreachService';
+
+export const prerender = false;
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const user = await getProvider().users.getById(uid);
+const tier = await tierForUser(uid);
+const campaign = await getCampaign(uid, String(Astro.params.id));
+if (!campaign) return Astro.redirect('/dashboard/outreach/campaigns');
+const emails = campaign.emails;
+const recip = (r: unknown) => Array.isArray(r) ? r.join(', ') : (r ?? '');
+---
+<DashboardLayout active="campaigns" email={user?.email} tier={tier} title={`${campaign.title} — Campaign`}>
+  <p class="crumbs"><a href="/dashboard/outreach/campaigns">← Campaigns</a></p>
+  <div class="head"><h1>{campaign.title}</h1><span class={`badge badge-${campaign.status}`}>{campaign.status}</span></div>
+
+  <details class="prompt"><summary>Campaign prompt (frozen)</summary><pre>{campaign.prompt}</pre></details>
+
+  <div class="head sub"><h2>Prospect emails</h2><span class="count">{emails.length}</span></div>
+  {emails.length === 0 ? (
+    <div class="empty">No prospects yet. Ask your agent to run this campaign — as it researches
+      prospects it adds a drafted email for each, and they appear here to review.</div>
+  ) : (
+    <div class="tblwrap">
+      <table class="tbl"><thead><tr><th>To</th><th>Subject</th><th>Status</th></tr></thead>
+        <tbody>
+          {emails.map((e) => (
+            <tr class="erow" data-id={e.id} tabindex="0" role="button">
+              <td class="to">{recip(e.recipients) || '—'}</td>
+              <td class="subj">{e.subject || <span class="muted">— no subject —</span>}</td>
+              <td><span class={`badge badge-${e.status} js-st`}>{e.status}</span></td>
+            </tr>
+          ))}
+        </tbody></table>
+    </div>
+  )}
+
+  <!-- email drawer -->
+  <div class="drawer" id="edrawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-close></div>
+    <aside class="drawer-panel">
+      <header class="drawer-head"><h3>Email</h3><button class="drawer-x" data-close>✕</button></header>
+      <div class="drawer-body">
+        <label>Status<select id="ed-status"><option>draft</option><option>sent</option><option>failed</option></select></label>
+        <label>To<input id="ed-to" placeholder="prospect@company.com" /></label>
+        <label>Subject<input id="ed-subject" /></label>
+        <label>Body<textarea id="ed-body" rows="12"></textarea></label>
+        <details class="pd"><summary>Prospect details</summary><pre id="ed-details"></pre></details>
+      </div>
+      <footer class="drawer-foot"><span id="ed-msg" class="muted sm"></span>
+        <div class="foot-btns"><button class="btn-ghost danger" id="ed-del">Delete</button>
+          <button class="btn-ghost" data-close>Cancel</button><button class="btn-primary" id="ed-save">Save</button></div></footer>
+    </aside>
+  </div>
+
+  <script is:inline define:vars={{ emails }}>
+    const E = Object.fromEntries(emails.map((e) => [e.id, e]));
+    const $ = (id) => document.getElementById(id);
+    const dr = $('edrawer');
+    const open = () => { dr.classList.add('open'); dr.setAttribute('aria-hidden','false'); };
+    const close = () => { dr.classList.remove('open'); dr.setAttribute('aria-hidden','true'); };
+    dr.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    const recip = (r) => Array.isArray(r) ? r.join(', ') : (r ?? '');
+
+    function openEmail(id) {
+      const e = E[id]; if (!e) return;
+      dr.dataset.id = id;
+      $('ed-status').value = e.status || 'draft';
+      $('ed-to').value = recip(e.recipients);
+      $('ed-subject').value = e.subject || '';
+      $('ed-body').value = e.body || '';
+      $('ed-details').textContent = e.details ? JSON.stringify(e.details, null, 2) : '(none)';
+      $('ed-msg').textContent = '';
+      open();
+    }
+    document.querySelectorAll('.erow').forEach((row) => {
+      const go = () => openEmail(row.dataset.id);
+      row.addEventListener('click', go);
+      row.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') go(); });
+    });
+    $('ed-save').addEventListener('click', async () => {
+      const id = dr.dataset.id, btn = $('ed-save'); btn.disabled=true; $('ed-msg').textContent='Saving…';
+      const patch = { status: $('ed-status').value, recipients: $('ed-to').value, subject: $('ed-subject').value, body: $('ed-body').value };
+      const r = await fetch(`/api/outreach/emails/${id}`, { method:'PATCH', headers:{'content-type':'application/json'}, body: JSON.stringify(patch) });
+      btn.disabled=false;
+      if (!r.ok) { const d = await r.json().catch(()=>({})); $('ed-msg').textContent = d.message||d.error||'Save failed.'; return; }
+      const row = document.querySelector(`.erow[data-id="${id}"]`);
+      if (row) { row.querySelector('.to').textContent = patch.recipients||'—'; row.querySelector('.subj').textContent = patch.subject||'— no subject —'; const st=row.querySelector('.js-st'); st.textContent=patch.status; st.className=`badge badge-${patch.status} js-st`; }
+      E[id] = { ...E[id], ...patch }; $('ed-msg').textContent='Saved ✓'; setTimeout(close, 500);
+    });
+    $('ed-del').addEventListener('click', async () => {
+      const id = dr.dataset.id; if (!confirm('Delete this prospect + email? The agent will not send it.')) return;
+      await fetch(`/api/outreach/emails/${id}`, { method:'DELETE' });
+      document.querySelector(`.erow[data-id="${id}"]`)?.remove(); close();
+    });
+  </script>
+
+  <style>
+    .crumbs { margin:0 0 0.6rem; font-size:0.9rem; }
+    .head { display:flex; align-items:center; gap:0.6rem; margin:0 0 0.3rem; }
+    .head h1 { margin:0; font-size:1.55rem; } .head.sub { margin-top:2rem; } .head.sub h2 { margin:0; font-size:1.2rem; }
+    .muted { color:var(--muted); } .sm { font-size:0.85rem; }
+    .count { font-size:0.72rem; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0.05rem 0.5rem; }
+    .prompt { margin-top:1rem; border:1px solid var(--border); border-radius:10px; padding:0.4rem 0.9rem; }
+    .prompt summary { cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--muted); padding:0.4rem 0; }
+    .prompt pre { white-space:pre-wrap; font-size:0.85rem; margin:0.5rem 0; }
+    .empty { border:1px dashed var(--border); border-radius:14px; padding:2rem; text-align:center; margin-top:1.2rem; color:var(--muted); }
+    .tblwrap { overflow-x:auto; margin-top:1rem; }
+    .tbl { width:100%; border-collapse:collapse; font-size:0.92rem; }
+    .tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em; padding:0.5rem 0.7rem; border-bottom:1px solid var(--border); }
+    .tbl td { padding:0.75rem 0.7rem; border-bottom:1px solid var(--border); }
+    .erow { cursor:pointer; } .erow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); }
+    .erow:focus { outline:2px solid var(--accent); outline-offset:-2px; }
+    .subj { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .badge { text-transform:uppercase; font-size:0.64rem; font-weight:700; padding:0.1rem 0.5rem; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
+    .badge-draft { color:#9a6700; border-color:#9a6700; }
+    .badge-sent, .badge-active { color:#1a7f37; border-color:#1a7f37; }
+    .badge-failed { color:#cf222e; border-color:#cf222e; }
+
+    .drawer { position:fixed; inset:0; z-index:50; visibility:hidden; }
+    .drawer.open { visibility:visible; }
+    .drawer-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.35); opacity:0; transition:opacity .2s; }
+    .drawer.open .drawer-backdrop { opacity:1; }
+    .drawer-panel { position:absolute; top:0; right:0; height:100%; width:min(560px,100%); background:var(--bg); border-left:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .25s ease; box-shadow:-8px 0 24px rgba(0,0,0,.12); }
+    .drawer.open .drawer-panel { transform:translateX(0); }
+    .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:1.2rem 1.4rem; border-bottom:1px solid var(--border); }
+    .drawer-head h3 { margin:0; } .drawer-x { border:none; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
+    .drawer-body { padding:1.2rem 1.4rem; overflow-y:auto; flex:1; display:grid; gap:1rem; }
+    .drawer-body label { display:grid; gap:0.3rem; font-size:0.8rem; font-weight:600; color:var(--muted); }
+    .drawer-body input, .drawer-body select, .drawer-body textarea { font:inherit; font-weight:400; color:var(--fg); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.55rem 0.65rem; width:100%; }
+    .drawer-body textarea { resize:vertical; line-height:1.5; }
+    .drawer-body input:focus, .drawer-body select:focus, .drawer-body textarea:focus { outline:none; border-color:var(--accent); }
+    .pd summary { cursor:pointer; font-size:0.8rem; font-weight:600; color:var(--muted); }
+    .pd pre { white-space:pre-wrap; font-size:0.8rem; background:var(--bg-soft); padding:0.6rem; border-radius:8px; margin:0.5rem 0 0; }
+    .drawer-foot { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.4rem; border-top:1px solid var(--border); }
+    .foot-btns { display:flex; gap:0.6rem; }
+    .btn-primary { padding:0.5rem 1rem; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-primary:hover { filter:brightness(1.05); } .btn-primary:disabled { opacity:0.6; }
+    .btn-ghost { padding:0.5rem 1rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); border-radius:8px; cursor:pointer; }
+    .btn-ghost:hover { border-color:var(--accent); } .btn-ghost.danger:hover { border-color:#cf222e; color:#cf222e; }
+  </style>
+</DashboardLayout>

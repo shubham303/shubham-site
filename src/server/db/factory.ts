@@ -7,8 +7,11 @@ import { ApiKeysRepository } from '../repositories/apiKeys';
 import { SubscriptionsRepository } from '../repositories/subscriptions';
 import { FoldersRepository } from '../repositories/folders';
 import { ReportsRepository } from '../repositories/reports';
-import { OutreachPromptsRepository } from '../repositories/outreachPrompts';
+import { OutreachTemplatesRepository } from '../repositories/outreachTemplates';
+import { CampaignsRepository } from '../repositories/campaigns';
 import { ProspectsRepository } from '../repositories/prospects';
+import { SentEmailsRepository } from '../repositories/sentEmails';
+import { ReceivedEmailsRepository } from '../repositories/receivedEmails';
 
 let db: Database | null = null;
 
@@ -27,27 +30,16 @@ function createDatabase(): Database {
 /** Facade over the repositories; services take this and stay DB-agnostic. */
 export class RepositoryProvider {
   constructor(private database: Database) {}
-  get users() {
-    return new UsersRepository(this.database);
-  }
-  get apiKeys() {
-    return new ApiKeysRepository(this.database);
-  }
-  get subscriptions() {
-    return new SubscriptionsRepository(this.database);
-  }
-  get folders() {
-    return new FoldersRepository(this.database);
-  }
-  get reports() {
-    return new ReportsRepository(this.database);
-  }
-  get outreachPrompts() {
-    return new OutreachPromptsRepository(this.database);
-  }
-  get prospects() {
-    return new ProspectsRepository(this.database);
-  }
+  get users() { return new UsersRepository(this.database); }
+  get apiKeys() { return new ApiKeysRepository(this.database); }
+  get subscriptions() { return new SubscriptionsRepository(this.database); }
+  get folders() { return new FoldersRepository(this.database); }
+  get reports() { return new ReportsRepository(this.database); }
+  get templates() { return new OutreachTemplatesRepository(this.database); }
+  get campaigns() { return new CampaignsRepository(this.database); }
+  get prospects() { return new ProspectsRepository(this.database); }
+  get sentEmails() { return new SentEmailsRepository(this.database); }
+  get receivedEmails() { return new ReceivedEmailsRepository(this.database); }
 }
 
 let provider: RepositoryProvider | null = null;
@@ -70,8 +62,11 @@ export function ensureInit(): Promise<void> {
       await p.subscriptions.createTable();
       await p.folders.createTable();
       await p.reports.createTable();
-      await p.outreachPrompts.createTable();
+      await p.templates.createTable();
+      await p.campaigns.createTable();
       await p.prospects.createTable();
+      await p.sentEmails.createTable();
+      await p.receivedEmails.createTable();
     })();
   }
   return initialized;

@@ -1,0 +1,86 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { ensureInit, getProvider } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { listApiKeys } from '@server/services/apiKeyService';
+
+export const prerender = false;
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const user = await getProvider().users.getById(uid);
+const tier = await tierForUser(uid);
+const keys = await listApiKeys(uid);
+const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+---
+<DashboardLayout active="account" email={user?.email} tier={tier} title="Account — Table Intelligence">
+  <h1>Account</h1>
+  <p class="muted">{user?.email} · plan <strong>{tier}</strong>
+    {tier !== 'paid' && <> · <a href="/pricing">Upgrade</a></>}</p>
+
+  <div class="head sub"><h2>API keys</h2><span class="count">{keys.length}</span>
+    <button class="btn-primary ml" id="new-key">Generate new key</button></div>
+  <p class="muted">Your MCP server authenticates with an API key. Paste it into your agent's config as
+    <code>TABINT_API_KEY</code> (see the <a href="/docs/install">install guide</a>). Keys are shown once.</p>
+
+  <div id="new-key-box" class="keybox" style="display:none">
+    <p><strong>Copy your new key now — it won't be shown again:</strong></p>
+    <div class="key-row"><code id="new-key-val"></code><button class="btn-ghost" id="copy-key">Copy</button></div>
+  </div>
+
+  {keys.length === 0 ? (
+    <p class="muted">No keys yet. Generate one to connect your MCP server.</p>
+  ) : (
+    <ul class="klist">
+      {keys.map((k) => (
+        <li class="kitem">
+          <span class="kmain"><code>{k.key_prefix}…</code>
+            <span class="kname">{k.name}</span></span>
+          <span class="kmeta">created {fmt(k.created_at)}</span>
+          <button class="btn-ghost sm revoke" data-id={k.id}>Revoke</button>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <script is:inline>
+    document.getElementById('new-key').addEventListener('click', async () => {
+      const r = await fetch('/api/account/api-keys', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'key' }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.apiKey) { alert(d.message || d.error || 'Could not create key.'); return; }
+      document.getElementById('new-key-val').textContent = d.apiKey;
+      document.getElementById('new-key-box').style.display = 'block';
+    });
+    document.getElementById('copy-key').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(document.getElementById('new-key-val').textContent).catch(() => {});
+      document.getElementById('copy-key').textContent = 'Copied';
+    });
+    document.querySelectorAll('.revoke').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('Revoke this key? Any MCP server using it will stop working.')) return;
+      await fetch(`/api/account/api-keys/${b.dataset.id}`, { method: 'DELETE' });
+      b.closest('.kitem').remove();
+    }));
+  </script>
+
+  <style>
+    h1 { font-size:1.6rem; margin:0 0 0.3rem; }
+    .muted { color:var(--muted); font-size:0.92rem; max-width:640px; }
+    .head.sub { display:flex; align-items:center; gap:0.6rem; margin:2.2rem 0 0.3rem; }
+    .head.sub h2 { margin:0; font-size:1.2rem; } .ml { margin-left:auto; }
+    .count { font-size:0.72rem; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0.05rem 0.5rem; }
+    .keybox { border:1px solid var(--accent); border-radius:10px; padding:1rem 1.1rem; margin:1rem 0; }
+    .key-row { display:flex; gap:0.5rem; align-items:stretch; }
+    .key-row code { flex:1; overflow-x:auto; white-space:nowrap; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:8px; background:var(--bg-soft); }
+    .klist { list-style:none; padding:0; margin:1.2rem 0 0; display:grid; gap:0.5rem; }
+    .kitem { display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border:1px solid var(--border); border-radius:10px; }
+    .kmain { flex:1; display:flex; align-items:center; gap:0.7rem; }
+    .kname { color:var(--muted); font-size:0.85rem; }
+    .kmeta { color:var(--muted); font-size:0.82rem; }
+    .btn-primary { padding:0.5rem 1rem; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-primary:hover { filter:brightness(1.05); }
+    .btn-ghost { padding:0.4rem 0.7rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); border-radius:8px; cursor:pointer; font-size:0.82rem; }
+    .btn-ghost.sm.revoke:hover { border-color:#cf222e; color:#cf222e; }
+    code { background:var(--code-bg); padding:0.15em 0.4em; border-radius:4px; font-size:0.88em; }
+  </style>
+</DashboardLayout>

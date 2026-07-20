@@ -1,0 +1,68 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import { ensureInit, getProvider } from '@server/db/factory';
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+import { tierForUser } from '@server/services/entitlementService';
+import { listReceived } from '@server/services/outreachService';
+
+export const prerender = false;
+await ensureInit();
+const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+if (!uid) return Astro.redirect('/login');
+const user = await getProvider().users.getById(uid);
+const tier = await tierForUser(uid);
+const received = await listReceived(uid);
+const fmt = (d: string | null) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+---
+<DashboardLayout active="inbox" email={user?.email} tier={tier} title="Inbox — Table Intelligence">
+  <div class="head"><h1>Inbox</h1><span class="count">{received.length}</span></div>
+  <p class="muted">Replies your agent has saved. Not campaign-specific — the agent records incoming
+    email here as it comes in. (Threading to sent emails is a future version.)</p>
+
+  {received.length === 0 ? (
+    <div class="empty">No received emails saved yet. Ask your agent to check your inbox and
+      <em>save the replies</em>.</div>
+  ) : (
+    <ul class="rlist">
+      {received.map((m) => (
+        <li class="ritem">
+          <details>
+            <summary>
+              <span class="rfrom">{m.sender || 'Unknown sender'}</span>
+              <span class="rsubj">{m.subject || '(no subject)'}</span>
+              <span class="rdate">{fmt(m.received_at)}</span>
+            </summary>
+            <div class="rbody">{m.body || '(no body)'}</div>
+            <button class="btn-ghost sm del" data-id={m.id}>Delete</button>
+          </details>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <script is:inline>
+    document.querySelectorAll('.del').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('Delete this received email?')) return;
+      await fetch(`/api/outreach/received/${b.dataset.id}`, { method: 'DELETE' });
+      b.closest('.ritem').remove();
+    }));
+  </script>
+
+  <style>
+    .head { display:flex; align-items:baseline; gap:0.6rem; margin:0 0 0.3rem; }
+    .head h1 { margin:0; font-size:1.6rem; }
+    .muted { color:var(--muted); font-size:0.92rem; max-width:640px; }
+    .count { font-size:0.72rem; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0.05rem 0.5rem; }
+    .empty { border:1px dashed var(--border); border-radius:14px; padding:2rem; text-align:center; margin-top:1.2rem; color:var(--muted); }
+    .rlist { list-style:none; padding:0; margin:1.4rem 0 0; display:grid; gap:0.5rem; }
+    .ritem { border:1px solid var(--border); border-radius:10px; }
+    .ritem summary { cursor:pointer; display:flex; align-items:baseline; gap:0.8rem; padding:0.8rem 1rem; }
+    .rfrom { font-weight:600; min-width:140px; }
+    .rsubj { flex:1; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rdate { color:var(--muted); font-size:0.8rem; white-space:nowrap; }
+    .rbody { padding:0 1rem 0.8rem; white-space:pre-wrap; font-size:0.92rem; line-height:1.55; }
+    .del { margin:0 1rem 1rem; }
+    .btn-ghost { padding:0.4rem 0.7rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); border-radius:8px; cursor:pointer; font-size:0.82rem; }
+    .btn-ghost:hover { border-color:#cf222e; color:#cf222e; }
+  </style>
+</DashboardLayout>

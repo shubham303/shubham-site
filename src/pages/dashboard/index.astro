@@ -1,6 +1,5 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import DashboardHeader from '../../components/DashboardHeader.astro';
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import { ensureInit, getProvider } from '@server/db/factory';
 import { verifySession, SESSION_COOKIE } from '@server/lib/session';
 import { tierForUser } from '@server/services/entitlementService';
@@ -15,53 +14,37 @@ const user = await getProvider().users.getById(uid);
 const tier = await tierForUser(uid);
 const folders = await listFolders(uid);
 const reports = await listReports(uid);
-
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 const folderName = (id: string | null) => folders.find((f) => f.id === id)?.name;
 ---
-<Layout title="Dashboard — Table Intelligence">
-  <DashboardHeader email={user?.email} tier={tier} active="Reports" />
-
-  <div class="row">
-    <h2>Reports</h2>
-    <span class="count">{reports.length}</span>
-  </div>
-  <p class="muted sm">Analyses your agent saved. Open one to read the full report.</p>
+<DashboardLayout active="reports" email={user?.email} tier={tier} title="Reports — Table Intelligence">
+  <div class="head"><h1>Reports</h1><span class="count">{reports.length}</span></div>
+  <p class="muted">Analyses your agent saved. Open one to read the full report.</p>
 
   {reports.length === 0 ? (
-    <div class="empty">
-      <div class="empty-ic">📊</div>
-      <p><strong>No reports yet.</strong></p>
-      <p class="muted">In your AI agent, run an analysis with Table Intelligence and ask it to
-        <em>save a report</em> — it'll show up here.</p>
-    </div>
+    <div class="empty"><div class="empty-ic">📊</div><p><strong>No reports yet.</strong></p>
+      <p class="muted">In your agent, run an analysis and ask Table Intelligence to <em>save a report</em>.</p></div>
   ) : (
     <ul class="cards">
       {reports.map((r) => (
-        <li>
-          <a class="rcard" href={`/dashboard/reports/${r.id}`}>
-            <span class="rcard-ic">📄</span>
-            <span class="rcard-main">
-              <span class="rcard-title">{r.title}</span>
-              <span class="rcard-meta">
-                <span>{fmt(r.created_at)}</span>
-                {folderName(r.folder_id) && <span class="chip">{folderName(r.folder_id)}</span>}
-                {r.shared && <span class="chip chip-accent">shared</span>}
-              </span>
-            </span>
-            <span class="rcard-go">→</span>
-          </a>
-        </li>
+        <li><a class="rcard" href={`/dashboard/reports/${r.id}`}>
+          <span class="rcard-ic">📄</span>
+          <span class="rcard-main">
+            <span class="rcard-title">{r.title}</span>
+            <span class="rcard-meta"><span>{fmt(r.created_at)}</span>
+              {folderName(r.folder_id) && <span class="chip">{folderName(r.folder_id)}</span>}
+              {r.shared && <span class="chip chip-accent">shared</span>}</span>
+          </span>
+          <span class="rcard-go">→</span>
+        </a></li>
       ))}
     </ul>
   )}
 
   <section class="folders">
-    <div class="row"><h2>Folders</h2><span class="count">{folders.length}</span></div>
-    {folders.length > 0 && (
-      <ul class="chips-row">{folders.map((f) => <li class="chip chip-lg">{f.name}</li>)}</ul>
-    )}
-    <form id="nf" class="nf">
+    <div class="head"><h2>Folders</h2><span class="count">{folders.length}</span></div>
+    {folders.length > 0 && <ul class="chips-row">{folders.map((f) => <li class="chip chip-lg">{f.name}</li>)}</ul>}
+    <form id="nf" class="inline-form">
       <input id="fname" placeholder="New folder name" />
       <button>Create</button>
     </form>
@@ -70,48 +53,38 @@ const folderName = (id: string | null) => folders.find((f) => f.id === id)?.name
   <script is:inline>
     document.getElementById('nf').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('fname').value;
-      if (!name) return;
+      const name = document.getElementById('fname').value; if (!name) return;
       await fetch('/api/folders', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }) });
       location.reload();
     });
   </script>
 
   <style>
-    .row { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.3rem; }
-    .row h2 { margin: 0; font-size: 1.3rem; }
-    .muted { color: var(--muted); }
-    .sm { font-size: 0.85rem; }
+    .head { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.3rem; }
+    .head h1, .head h2 { margin: 0; }
+    .head h1 { font-size: 1.6rem; }
+    .muted { color: var(--muted); font-size: 0.92rem; }
     .count { font-size: 0.72rem; font-weight: 700; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.5rem; }
-
     .empty { border: 1px dashed var(--border); border-radius: 14px; padding: 2rem; text-align: center; margin-top: 1rem; }
     .empty-ic { font-size: 1.8rem; margin-bottom: 0.5rem; }
-    .empty p { margin: 0 0 0.4rem; }
-
     .cards { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.7rem; }
-    .rcard {
-      display: flex; align-items: center; gap: 1rem; padding: 1rem 1.1rem;
-      border: 1px solid var(--border); border-radius: 12px; color: var(--fg);
-      transition: border-color 0.15s, transform 0.12s;
-    }
-    .rcard:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
-    .rcard-ic { font-size: 1.3rem; flex: none; }
+    .rcard { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; color: var(--fg); transition: border-color 0.15s; }
+    .rcard:hover { border-color: var(--accent); text-decoration: none; }
+    .rcard-ic { font-size: 1.3rem; }
     .rcard-main { flex: 1; display: grid; gap: 0.3rem; }
     .rcard-title { font-size: 1.05rem; font-weight: 600; }
     .rcard-meta { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; color: var(--muted); flex-wrap: wrap; }
-    .rcard-go { color: var(--muted); font-size: 1.1rem; flex: none; }
+    .rcard-go { color: var(--muted); }
     .rcard:hover .rcard-go { color: var(--accent); }
-
     .chip { font-size: 0.72rem; padding: 0.1rem 0.5rem; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); list-style: none; }
     .chip-lg { font-size: 0.85rem; padding: 0.25rem 0.7rem; }
     .chip-accent { color: var(--accent); border-color: var(--accent); }
-
     .folders { margin-top: 2.75rem; }
     .chips-row { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 0.8rem 0 1rem; }
-    .nf { display: flex; gap: 0.4rem; max-width: 360px; }
-    .nf input { flex: 1; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--fg); }
-    .nf input:focus { outline: none; border-color: var(--accent); }
-    .nf button { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--fg); cursor: pointer; }
-    .nf button:hover { border-color: var(--accent); }
+    .inline-form { display: flex; gap: 0.4rem; max-width: 360px; }
+    .inline-form input { flex: 1; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--fg); }
+    .inline-form input:focus { outline: none; border-color: var(--accent); }
+    .inline-form button { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--fg); cursor: pointer; }
+    .inline-form button:hover { border-color: var(--accent); }
   </style>
-</Layout>
+</DashboardLayout>

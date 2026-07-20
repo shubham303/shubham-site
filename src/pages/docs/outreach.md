@@ -5,63 +5,49 @@ title: Outreach connector
 
 # Outreach connector
 
-Turn Table Intelligence into an AI outreach assistant: your agent researches prospects, drafts
-personalised emails, and stores them on your account so you can review and edit before anything
-goes out. The dashboard is where you see and edit everything; the AI does the work.
+An AI outreach assistant: your agent works from a **template**, runs a **campaign** that researches
+prospects and drafts a personalised email for each, stores them on your account, and lets you
+review and edit everything before you send. Table Intelligence stores and organises the data — it
+does **not** send email. Sending happens in your agent through your own email tool (Gmail, SMTP…).
 
 > Outreach is a **premium connector**. Start a trial or upgrade on [pricing](/pricing).
 
-## What this connector does — and doesn't
+## The model
 
-Table Intelligence **stores and organises** your outreach: prospects, the research on each one,
-the drafted email (to, subject, body), and a status. It gives your agent tools to create, read,
-update and delete that data, and gives you a dashboard to review and edit it.
+- **Template** — a reusable playbook: a title + a prompt describing who to target and how to
+  research and write. (`Templates` tab.)
+- **Campaign** — a run of a template. On creation the template's prompt is **copied and frozen**,
+  so editing the template later doesn't change past campaigns. (`Campaigns` tab.)
+- **Prospect email** — for each prospect the agent finds, it adds a draft email (recipients,
+  subject, body) plus the research it gathered. You review/edit these in the campaign.
+- **Inbox** — replies your agent saves. Global, not campaign-specific in this version.
 
-It **does not send email.** Sending is done inside your AI agent through your *own* email tool
-(for example a Gmail or SMTP MCP). After your agent sends, it records the outcome back here — the
-status becomes `sent`, and later `replied` — so your dashboard stays the single view of every
-conversation.
+## The flow
 
-## 1. Create an outreach prompt
+1. **Create a template** — in the dashboard (`Templates → New template`) or ask your agent:
+   > "Create an outreach template for seed-stage SaaS founders that opens with a data question."
+2. **Start a campaign** from the template — `Start campaign`, or:
+   > "Start a campaign from the SaaS founders template."
+3. **Let the agent fill it** — it researches prospects on the web and adds a drafted email for each:
+   > "Find 20 SaaS founders, research each, and add a drafted email to the campaign."
+4. **Review & edit** — open the campaign, click any email to open the editor: fix the recipients,
+   subject or body, or delete/disapprove a prospect so it won't be sent. You can also ask the agent
+   to revise drafts in bulk.
+5. **Send from your agent** — when you're happy:
+   > "Send all the drafted emails in this campaign using my Gmail, and mark each as sent."
+   The agent reads the campaign data, sends via your own email tool, and updates each email's
+   status. Anything you deleted is simply not there to send.
+6. **Save replies** — the agent can record incoming replies to your Inbox as they arrive.
 
-An outreach prompt is your editable playbook — the tone, structure, and rules the agent follows
-when drafting. Keep several for different campaigns:
+## Your API key
 
-> "Create an outreach prompt called 'Agencies — warm intro' that opens with one specific line
-> about the prospect and keeps the pitch to three sentences."
-
-You can view and edit any prompt on the [outreach dashboard](/dashboard/outreach) — click a prompt
-card to open its editor.
-
-## 2. Research & draft
-
-Point your agent at a list or a description, and let it work:
-
-> "Find 20 SaaS founders in Singapore, research each, and draft outreach using the
-> 'Agencies — warm intro' prompt. Save them for me to review."
-
-Each prospect — name, email, company, research, and the drafted email — appears on your
-[dashboard](/dashboard/outreach), marked **drafted**.
-
-## 3. Review & edit
-
-Click any prospect to open it in a side panel. Read the full email (to / subject / body), edit it
-by hand, or ask your agent to revise it. Change the status as things progress.
-
-## 4. Send from your agent, track here
-
-When you're happy, ask your agent to send using your email tool:
-
-> "Send the email to Maya using my Gmail, then mark her as sent."
-
-Your agent sends through your own email account and updates the status here. To capture replies,
-ask it to check your inbox and record them:
-
-> "Check for replies and save them against the prospects who responded."
+The MCP server authenticates to your account with an API key. Get one on
+[Account &amp; API key](/dashboard/account) — click **Generate new key** (shown once) and paste it
+into your agent's config as `TABINT_API_KEY` (see the [install guide](/docs/install)).
 
 ## What's stored where
 
-Prospects and prompts live on your Table Intelligence account so the dashboard can show them. Your
-raw analytics data stays on your machine (see [Privacy](/docs/privacy)). Table Intelligence never
-sends email and never touches your inbox — that stays entirely inside your agent and your own
-tools.
+Templates, campaigns, prospects and emails live on your Table Intelligence account so the dashboard
+can show them. Your raw analytics data stays on your machine (see [Privacy](/docs/privacy)). Table
+Intelligence never sends email and never reads your inbox — that stays entirely in your agent and
+your own tools.
