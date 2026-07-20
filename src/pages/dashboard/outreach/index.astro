@@ -5,7 +5,6 @@ import { ensureInit, getProvider } from '@server/db/factory';
 import { verifySession, SESSION_COOKIE } from '@server/lib/session';
 import { tierForUser } from '@server/services/entitlementService';
 import { listPrompts, listProspects } from '@server/services/outreachService';
-import { getEmailAccount } from '@server/services/emailService';
 
 export const prerender = false;
 
@@ -16,8 +15,9 @@ const user = await getProvider().users.getById(uid);
 const tier = await tierForUser(uid);
 const prompts = await listPrompts(uid);
 const prospects = await listProspects(uid);
-const email = await getEmailAccount(uid);
 const entitled = tier === 'paid' || tier === 'trial';
+
+const STATUSES = ['new', 'drafted', 'sent', 'delivered', 'bounced', 'replied', 'skipped'];
 ---
 <Layout title="Outreach — Table Intelligence">
   <DashboardHeader email={user?.email} tier={tier} active="Outreach" />
@@ -28,31 +28,27 @@ const entitled = tier === 'paid' || tier === 'trial';
     </div>
   )}
 
-  <!-- sending email -->
-  <section>
-    <div class="row"><h2>Sending email</h2>
-      {email.connected && <span class="badge badge-ok">connected</span>}
-    </div>
-    {email.connected ? (
-      <p class="muted">Sending as <strong>{email.from_email}</strong> via {email.provider}.</p>
-    ) : (
-      <p class="muted">Connect your own Resend account — email sends from your domain, replies come to you.</p>
-    )}
-    <form id="ef" class="ef">
-      <input id="from_email" placeholder="From email (your verified domain)" />
-      <input id="from_name" placeholder="From name (optional)" />
-      <input id="api_key" type="password" placeholder="Resend API key (rk_…)" />
-      <button>{email.connected ? 'Update sending account' : 'Save sending account'}</button>
-    </form>
-  </section>
+  <p class="intro muted">
+    Prospects your AI agent has researched and drafted. Review and edit the email here — or ask your
+    agent to revise it. <strong>Sending happens in your agent</strong> through your own email tool;
+    Table Intelligence just stores the data and tracks status.
+  </p>
 
   <!-- prompts -->
   <section class="mt">
-    <div class="row"><h2>Prompts</h2><span class="count">{prompts.length}</span></div>
+    <div class="row"><h2>Outreach prompts</h2><span class="count">{prompts.length}</span></div>
+    <p class="muted sm">The playbooks your agent follows when drafting. Click to view or edit.</p>
     {prompts.length === 0 ? (
-      <p class="muted">No outreach prompts yet. Ask your AI agent to create one.</p>
+      <p class="muted">No prompts yet. Ask your AI agent to create one.</p>
     ) : (
-      <ul class="chips-row">{prompts.map((p) => <li class="chip">{p.name}</li>)}</ul>
+      <div class="prompt-grid">
+        {prompts.map((p) => (
+          <button class="prompt-card" data-prompt={p.id} type="button">
+            <span class="prompt-name">{p.name}</span>
+            <span class="prompt-preview">{(p.body || '').slice(0, 90)}{(p.body || '').length > 90 ? '…' : ''}</span>
+          </button>
+        ))}
+      </div>
     )}
   </section>
 
@@ -61,22 +57,18 @@ const entitled = tier === 'paid' || tier === 'trial';
     <div class="row"><h2>Prospects</h2><span class="count">{prospects.length}</span></div>
     {prospects.length === 0 ? (
       <p class="muted">No prospects yet. In your AI agent, ask Table Intelligence to research prospects
-        and draft outreach — they'll appear here to review before you send.</p>
+        and draft outreach — they'll appear here to review.</p>
     ) : (
       <div class="tblwrap">
         <table class="tbl">
-          <thead><tr><th>Name</th><th>Email</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Name</th><th>To</th><th>Status</th><th class="right">Updated</th></tr></thead>
           <tbody>
             {prospects.map((p) => (
-              <tr>
+              <tr class="prow" data-prospect={p.id} tabindex="0" role="button">
                 <td><span class="pname">{p.name || '—'}</span>{p.company && <span class="pcompany">{p.company}</span>}</td>
                 <td class="pemail">{p.email || '—'}</td>
-                <td><span class={`badge badge-${p.status}`}>{p.status}</span></td>
-                <td class="right">
-                  {p.status !== 'sent' && p.status !== 'replied' && (
-                    <button class="send" data-id={p.id}>Send</button>
-                  )}
-                </td>
+                <td><span class={`badge badge-${p.status} js-status`}>{p.status}</span></td>
+                <td class="right muted sm">{new Date(p.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
               </tr>
             ))}
           </tbody>
@@ -85,75 +77,257 @@ const entitled = tier === 'paid' || tier === 'trial';
     )}
   </section>
 
-  <script is:inline>
-    document.getElementById('ef').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const payload = {
-        from_email: document.getElementById('from_email').value,
-        from_name: document.getElementById('from_name').value,
-        api_key: document.getElementById('api_key').value,
-      };
-      const r = await fetch('/api/outreach/email-account', {
-        method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
-      });
-      if (r.ok) location.reload();
-      else alert('Could not save — check the fields.');
+  <!-- ============ prospect drawer ============ -->
+  <div class="drawer" id="pdrawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-close></div>
+    <aside class="drawer-panel" role="dialog" aria-label="Prospect email">
+      <header class="drawer-head">
+        <div>
+          <h3 id="pd-name">Prospect</h3>
+          <span id="pd-company" class="muted sm"></span>
+        </div>
+        <button class="drawer-x" data-close aria-label="Close">✕</button>
+      </header>
+      <div class="drawer-body">
+        <label>Status
+          <select id="pd-status">{STATUSES.map((s) => <option value={s}>{s}</option>)}</select>
+        </label>
+        <label>To
+          <input id="pd-email" type="email" placeholder="prospect@company.com" />
+        </label>
+        <label>Company
+          <input id="pd-companyf" placeholder="Company" />
+        </label>
+        <label>Subject
+          <input id="pd-subject" placeholder="Email subject" />
+        </label>
+        <label>Body
+          <textarea id="pd-body" rows="10" placeholder="Email body"></textarea>
+        </label>
+        <label>Research notes
+          <textarea id="pd-research" rows="4" placeholder="What the agent found about this prospect"></textarea>
+        </label>
+        <details class="reply-wrap">
+          <summary>Reply received</summary>
+          <textarea id="pd-reply" rows="4" placeholder="Paste their reply here (or your agent records it)"></textarea>
+        </details>
+      </div>
+      <footer class="drawer-foot">
+        <span id="pd-msg" class="muted sm"></span>
+        <div class="foot-btns">
+          <button class="btn-ghost" data-close>Cancel</button>
+          <button class="btn-primary" id="pd-save">Save changes</button>
+        </div>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- ============ prompt drawer ============ -->
+  <div class="drawer" id="qdrawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-close></div>
+    <aside class="drawer-panel" role="dialog" aria-label="Outreach prompt">
+      <header class="drawer-head">
+        <h3>Edit prompt</h3>
+        <button class="drawer-x" data-close aria-label="Close">✕</button>
+      </header>
+      <div class="drawer-body">
+        <label>Name<input id="qd-name" placeholder="Prompt name" /></label>
+        <label>Playbook<textarea id="qd-body" rows="16" placeholder="Instructions your agent follows when drafting outreach"></textarea></label>
+      </div>
+      <footer class="drawer-foot">
+        <span id="qd-msg" class="muted sm"></span>
+        <div class="foot-btns">
+          <button class="btn-ghost" data-close>Cancel</button>
+          <button class="btn-primary" id="qd-save">Save prompt</button>
+        </div>
+      </footer>
+    </aside>
+  </div>
+
+  <script is:inline define:vars={{ prompts }}>
+    const PROMPTS = Object.fromEntries(prompts.map((p) => [p.id, p]));
+    const $ = (id) => document.getElementById(id);
+    const openDrawer = (el) => { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; };
+    const closeDrawer = (el) => { el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; };
+
+    // close handlers (backdrop, ✕, cancel, Esc)
+    document.querySelectorAll('.drawer').forEach((d) => {
+      d.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeDrawer(d)));
     });
-    document.querySelectorAll('.send').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        btn.disabled = true; btn.textContent = 'Sending…';
-        const r = await fetch(`/api/outreach/prospects/${btn.dataset.id}/send`, { method: 'POST' });
-        const d = await r.json().catch(() => ({}));
-        if (r.ok && d.ok) { location.reload(); }
-        else { btn.disabled = false; btn.textContent = 'Send'; alert(d.message || 'Send failed.'); }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.querySelectorAll('.drawer.open').forEach(closeDrawer);
+    });
+
+    // ---- prospect drawer ----
+    const pd = $('pdrawer');
+    async function openProspect(id) {
+      $('pd-msg').textContent = 'Loading…';
+      openDrawer(pd);
+      const r = await fetch(`/api/outreach/prospects/${id}`);
+      const { prospect } = await r.json().catch(() => ({}));
+      if (!prospect) { $('pd-msg').textContent = 'Could not load.'; return; }
+      pd.dataset.id = id;
+      $('pd-name').textContent = prospect.name || 'Prospect';
+      $('pd-company').textContent = prospect.company || '';
+      $('pd-status').value = prospect.status || 'new';
+      $('pd-email').value = prospect.email || '';
+      $('pd-companyf').value = prospect.company || '';
+      $('pd-subject').value = prospect.draft_subject || '';
+      $('pd-body').value = prospect.draft_body || '';
+      $('pd-research').value = prospect.research || '';
+      $('pd-reply').value = prospect.reply_text || '';
+      $('pd-msg').textContent = '';
+    }
+    document.querySelectorAll('.prow').forEach((row) => {
+      const go = () => openProspect(row.dataset.prospect);
+      row.addEventListener('click', go);
+      row.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    });
+    $('pd-save').addEventListener('click', async () => {
+      const id = pd.dataset.id;
+      const btn = $('pd-save'); btn.disabled = true; $('pd-msg').textContent = 'Saving…';
+      const patch = {
+        status: $('pd-status').value,
+        email: $('pd-email').value,
+        company: $('pd-companyf').value,
+        draft_subject: $('pd-subject').value,
+        draft_body: $('pd-body').value,
+        research: $('pd-research').value,
+        reply_text: $('pd-reply').value,
+      };
+      const r = await fetch(`/api/outreach/prospects/${id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch),
       });
+      btn.disabled = false;
+      if (!r.ok) { $('pd-msg').textContent = 'Save failed.'; return; }
+      // reflect in the row
+      const row = document.querySelector(`.prow[data-prospect="${id}"]`);
+      if (row) {
+        row.querySelector('.pemail').textContent = patch.email || '—';
+        const st = row.querySelector('.js-status');
+        st.textContent = patch.status; st.className = `badge badge-${patch.status} js-status`;
+        row.querySelector('.pcompany') && (row.querySelector('.pcompany').textContent = patch.company || '');
+      }
+      $('pd-msg').textContent = 'Saved ✓';
+      setTimeout(() => closeDrawer(pd), 500);
+    });
+
+    // ---- prompt drawer ----
+    const qd = $('qdrawer');
+    function openPrompt(id) {
+      const p = PROMPTS[id]; if (!p) return;
+      qd.dataset.id = id;
+      $('qd-name').value = p.name || '';
+      $('qd-body').value = p.body || '';
+      $('qd-msg').textContent = '';
+      openDrawer(qd);
+    }
+    document.querySelectorAll('.prompt-card').forEach((c) =>
+      c.addEventListener('click', () => openPrompt(c.dataset.prompt)));
+    $('qd-save').addEventListener('click', async () => {
+      const id = qd.dataset.id;
+      const btn = $('qd-save'); btn.disabled = true; $('qd-msg').textContent = 'Saving…';
+      const body = { name: $('qd-name').value, body: $('qd-body').value };
+      const r = await fetch(`/api/outreach/prompts/${id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+      });
+      btn.disabled = false;
+      if (!r.ok) { $('qd-msg').textContent = 'Save failed.'; return; }
+      PROMPTS[id] = { ...PROMPTS[id], ...body };
+      const card = document.querySelector(`.prompt-card[data-prompt="${id}"]`);
+      if (card) {
+        card.querySelector('.prompt-name').textContent = body.name;
+        card.querySelector('.prompt-preview').textContent = (body.body || '').slice(0, 90) + ((body.body || '').length > 90 ? '…' : '');
+      }
+      $('qd-msg').textContent = 'Saved ✓';
+      setTimeout(() => closeDrawer(qd), 500);
     });
   </script>
 
   <style>
-    .row { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.7rem; }
-    .row h2 { margin: 0; }
-    .mt { margin-top: 2.25rem; }
-    .muted { color: var(--muted); font-size: 0.92rem; }
-    .count, .badge {
-      font-size: 0.72rem; font-weight: 700; padding: 0.08rem 0.5rem; border-radius: 999px;
-      border: 1px solid var(--border); color: var(--muted);
-    }
-    .badge { text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.66rem; }
+    .intro { max-width: 640px; font-size: 0.95rem; margin: 0 0 2rem; }
+    .row { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.4rem; }
+    .row h2 { margin: 0; font-size: 1.3rem; }
+    .mt { margin-top: 2.5rem; }
+    .muted { color: var(--muted); }
+    .sm { font-size: 0.85rem; }
     .banner { padding: 0.7rem 0.9rem; border: 1px solid var(--accent); border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.92rem; }
-    .ef { display: grid; gap: 0.5rem; max-width: 420px; margin-top: 0.6rem; }
-    .ef input {
-      padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg); color: var(--fg);
+    .count {
+      font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.5rem;
     }
-    .ef input:focus { outline: none; border-color: var(--accent); }
-    .ef button {
-      padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg); color: var(--fg); cursor: pointer; font-weight: 500;
+
+    /* prompt cards */
+    .prompt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+    .prompt-card {
+      text-align: left; border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem;
+      background: var(--bg); color: var(--fg); cursor: pointer; display: grid; gap: 0.35rem;
+      transition: border-color 0.15s, transform 0.12s; font: inherit;
     }
-    .ef button:hover { border-color: var(--accent); }
-    .chips-row { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 0; list-style: none; }
-    .chip { font-size: 0.85rem; padding: 0.25rem 0.7rem; border: 1px solid var(--border); border-radius: 999px; }
-    .tblwrap { overflow-x: auto; }
-    .tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    .tbl th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.8rem; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
-    .tbl td { padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .prompt-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .prompt-name { font-weight: 600; }
+    .prompt-preview { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+
+    /* prospects table */
+    .tblwrap { overflow-x: auto; margin-top: 0.8rem; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .tbl th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); }
+    .tbl td { padding: 0.8rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .prow { cursor: pointer; transition: background 0.12s; }
+    .prow:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+    .prow:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
     .pname { font-weight: 600; display: block; }
     .pcompany { color: var(--muted); font-size: 0.82rem; }
     .pemail { color: var(--muted); }
     .right { text-align: right; }
-    .send {
-      padding: 0.3rem 0.7rem; border: 1px solid var(--accent); background: var(--accent); color: #fff;
-      border-radius: 7px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+
+    .badge {
+      text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.66rem; font-weight: 700;
+      padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted);
+      white-space: nowrap;
     }
-    .send:hover { filter: brightness(1.05); }
-    .send:disabled { opacity: 0.6; cursor: default; }
-    /* status colors */
-    .badge-new { color: var(--muted); }
     .badge-drafted { color: #9a6700; border-color: #9a6700; }
-    .badge-sent { color: var(--accent); border-color: var(--accent); }
-    .badge-delivered { color: var(--accent); border-color: var(--accent); }
-    .badge-replied, .badge-ok { color: #1a7f37; border-color: #1a7f37; }
+    .badge-sent, .badge-delivered { color: var(--accent); border-color: var(--accent); }
+    .badge-replied { color: #1a7f37; border-color: #1a7f37; }
     .badge-bounced { color: #cf222e; border-color: #cf222e; }
+
+    /* drawer */
+    .drawer { position: fixed; inset: 0; z-index: 50; visibility: hidden; }
+    .drawer.open { visibility: visible; }
+    .drawer-backdrop {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .drawer.open .drawer-backdrop { opacity: 1; }
+    .drawer-panel {
+      position: absolute; top: 0; right: 0; height: 100%; width: min(520px, 100%);
+      background: var(--bg); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; transform: translateX(100%);
+      transition: transform 0.25s ease; box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+    }
+    .drawer.open .drawer-panel { transform: translateX(0); }
+    .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--border); }
+    .drawer-head h3 { margin: 0; font-size: 1.15rem; }
+    .drawer-x { border: none; background: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 0.2rem; }
+    .drawer-x:hover { color: var(--fg); }
+    .drawer-body { padding: 1.2rem 1.4rem; overflow-y: auto; flex: 1; display: grid; gap: 1rem; }
+    .drawer-body label { display: grid; gap: 0.3rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+    .drawer-body input, .drawer-body select, .drawer-body textarea {
+      font: inherit; font-weight: 400; color: var(--fg); background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.65rem; width: 100%;
+    }
+    .drawer-body textarea { resize: vertical; line-height: 1.5; }
+    .drawer-body input:focus, .drawer-body select:focus, .drawer-body textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .reply-wrap summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+    .reply-wrap textarea { margin-top: 0.5rem; }
+    .drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.4rem; border-top: 1px solid var(--border); }
+    .foot-btns { display: flex; gap: 0.6rem; }
+    .btn-primary { padding: 0.5rem 1rem; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:disabled { opacity: 0.6; cursor: default; }
+    .btn-ghost { padding: 0.5rem 1rem; border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 8px; cursor: pointer; }
+    .btn-ghost:hover { border-color: var(--accent); }
   </style>
 </Layout>

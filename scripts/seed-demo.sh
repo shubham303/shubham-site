@@ -39,10 +39,9 @@ curl -s "${H[@]}" -X POST "$BASE/api/reports" -d '{"title":"Q3 revenue review","
 curl -s "${H[@]}" -X POST "$BASE/api/reports" -d '{"title":"Churn drivers","content":"# Churn drivers\n\nPast-due payment status is the biggest churn signal (4.1x risk)."}' >/dev/null
 curl -s "${H[@]}" -X POST "$BASE/api/reports" -d '{"title":"Customer segments (RFM)","content":"# RFM segments\n\nChampions 12% · Loyal 21% · At Risk 18% · Hibernating 29%."}' >/dev/null
 
-# --- outreach: prompts, a (dummy) sending account, and prospects ---
-curl -s "${H[@]}" -X POST "$BASE/api/outreach/prompts" -d '{"name":"Warm intro","body":"Open with one specific line about the prospect. Keep the pitch to three sentences."}' >/dev/null
-curl -s "${H[@]}" -X POST "$BASE/api/outreach/prompts" -d '{"name":"Free data audit","body":"Lead with a concrete data question. Offer a free teardown. Two sentences."}' >/dev/null
-curl -s "${H[@]}" -X PUT "$BASE/api/outreach/email-account" -d '{"api_key":"re_dummy_key","from_email":"you@example.com","from_name":"Demo Sender"}' >/dev/null
+# --- outreach: prompts + prospects (sending is done by the agent's own email tool) ---
+curl -s "${H[@]}" -X POST "$BASE/api/outreach/prompts" -d '{"name":"Warm intro","body":"Open with one specific line about the prospect. Keep the pitch to three sentences. Capability-led, no hype. Sign off with first name."}' >/dev/null
+curl -s "${H[@]}" -X POST "$BASE/api/outreach/prompts" -d '{"name":"Free data audit","body":"Lead with a concrete data question their product raises. Offer a free teardown. Two sentences."}' >/dev/null
 curl -s "${H[@]}" -X POST "$BASE/api/outreach/prospects" -d '{"prospects":[
   {"name":"Jane Doe","email":"jane@acme.example","company":"Acme Co","status":"replied","research":"Sample prospect.","draft_subject":"Hello","draft_body":"Hi Jane, ..."},
   {"name":"John Smith","email":"john@globex.example","company":"Globex","status":"sent","draft_subject":"Hello","draft_body":"Hi John, ..."},

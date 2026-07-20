@@ -9,7 +9,6 @@ import { FoldersRepository } from '../repositories/folders';
 import { ReportsRepository } from '../repositories/reports';
 import { OutreachPromptsRepository } from '../repositories/outreachPrompts';
 import { ProspectsRepository } from '../repositories/prospects';
-import { EmailAccountsRepository } from '../repositories/emailAccounts';
 
 let db: Database | null = null;
 
@@ -49,9 +48,6 @@ export class RepositoryProvider {
   get prospects() {
     return new ProspectsRepository(this.database);
   }
-  get emailAccounts() {
-    return new EmailAccountsRepository(this.database);
-  }
 }
 
 let provider: RepositoryProvider | null = null;
@@ -76,7 +72,6 @@ export function ensureInit(): Promise<void> {
       await p.reports.createTable();
       await p.outreachPrompts.createTable();
       await p.prospects.createTable();
-      await p.emailAccounts.createTable();
     })();
   }
   return initialized;
