@@ -1,0 +1,63 @@
+---
+// Shared header for the app dashboard: brand, account info, and Reports/Outreach tabs.
+interface Props { email?: string | null; tier: string; active: 'Reports' | 'Outreach' }
+const { email, tier, active } = Astro.props;
+---
+<header class="dh">
+  <div class="dh-top">
+    <a href="/" class="dh-brand">▚ Table Intelligence</a>
+    <div class="dh-acct">
+      {email && <span class="dh-email">{email}</span>}
+      <span class={`dh-plan plan-${tier}`}>{tier}</span>
+      {tier !== 'paid' && <button id="dh-up" class="dh-up">Upgrade</button>}
+      <a href="#" id="dh-logout" class="dh-logout">Log out</a>
+    </div>
+  </div>
+  <nav class="dh-tabs">
+    <a href="/dashboard" class={active === 'Reports' ? 'on' : ''}>Reports</a>
+    <a href="/dashboard/outreach" class={active === 'Outreach' ? 'on' : ''}>Outreach</a>
+  </nav>
+</header>
+
+<script is:inline>
+  (function () {
+    var up = document.getElementById('dh-up');
+    if (up) up.addEventListener('click', async function () {
+      up.disabled = true; up.textContent = 'Upgrading…';
+      await fetch('/api/billing/checkout', { method: 'POST' });
+      location.reload();
+    });
+    document.getElementById('dh-logout').addEventListener('click', async function (e) {
+      e.preventDefault();
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.href = '/login';
+    });
+  })();
+</script>
+
+<style>
+  .dh { margin: -1rem 0 1.75rem; border-bottom: 1px solid var(--border); }
+  .dh-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-bottom: 0.75rem; }
+  .dh-brand { font-weight: 700; color: var(--fg); }
+  .dh-brand:hover { text-decoration: none; }
+  .dh-acct { display: flex; align-items: center; gap: 0.7rem; font-size: 0.9rem; flex-wrap: wrap; }
+  .dh-email { color: var(--muted); }
+  .dh-plan {
+    text-transform: uppercase; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted);
+  }
+  .dh-plan.plan-trial, .dh-plan.plan-paid { color: var(--accent); border-color: var(--accent); }
+  .dh-up {
+    padding: 0.3rem 0.7rem; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+  .dh-up:hover { filter: brightness(1.05); }
+  .dh-logout { color: var(--muted); }
+  .dh-tabs { display: flex; gap: 1.4rem; }
+  .dh-tabs a {
+    color: var(--muted); padding: 0.55rem 0; margin-bottom: -1px;
+    border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  .dh-tabs a:hover { color: var(--fg); text-decoration: none; }
+  .dh-tabs a.on { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+</style>

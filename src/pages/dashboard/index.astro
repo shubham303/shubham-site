@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import DashboardHeader from '../../components/DashboardHeader.astro';
 import { ensureInit, getProvider } from '@server/db/factory';
 import { verifySession, SESSION_COOKIE } from '@server/lib/session';
 import { tierForUser } from '@server/services/entitlementService';
@@ -14,47 +15,53 @@ const user = await getProvider().users.getById(uid);
 const tier = await tierForUser(uid);
 const folders = await listFolders(uid);
 const reports = await listReports(uid);
+
+const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 <Layout title="Dashboard — Table Intelligence">
-  <h1>Your dashboard</h1>
-  <p>
-    {user?.email} &middot; plan: <strong>{tier}</strong>
-    {tier !== 'paid' && (
-      <button id="up" style="margin-left:.5rem;padding:.3rem .6rem;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;cursor:pointer">Upgrade to premium</button>
-    )}
-    <a href="#" id="logout" style="margin-left:.75rem"><small>Log out</small></a>
-  </p>
+  <DashboardHeader email={user?.email} tier={tier} active="Reports" />
 
-  <h2>Folders</h2>
-  {folders.length === 0 && <p><small>No folders yet.</small></p>}
-  <ul>{folders.map((f) => <li>{f.name}</li>)}</ul>
-  <form id="nf" style="display:flex;gap:.4rem;max-width:340px">
-    <input id="fname" placeholder="New folder name"
-      style="flex:1;padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)" />
-    <button style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer">Create</button>
-  </form>
+  <div class="row">
+    <h1>Reports</h1>
+    <span class="count">{reports.length}</span>
+  </div>
 
-  <h2 style="margin-top:2rem">Reports</h2>
-  {reports.length === 0 && (
-    <p><small>No reports yet. In your AI agent, run an analysis with Table Intelligence and ask it to
-      <em>save a report</em> — it'll show up here.</small></p>
+  {reports.length === 0 ? (
+    <div class="empty">
+      <p>No reports yet.</p>
+      <p class="muted">In your AI agent, run an analysis with Table Intelligence and ask it to
+        <em>save a report</em> — it'll show up here.</p>
+    </div>
+  ) : (
+    <ul class="cards">
+      {reports.map((r) => (
+        <li class="rcard">
+          <a class="rcard-title" href={`/dashboard/reports/${r.id}`}>{r.title}</a>
+          <div class="rcard-meta">
+            <span>{fmt(r.created_at)}</span>
+            {r.folder_id && <span class="chip">in folder</span>}
+            {r.shared && <span class="chip chip-accent">shared</span>}
+          </div>
+        </li>
+      ))}
+    </ul>
   )}
-  <ul>
-    {reports.map((r) => (
-      <li>
-        <a href={`/dashboard/reports/${r.id}`}>{r.title}</a>
-        <small style="color:var(--muted)"> &middot; {new Date(r.created_at).toLocaleString()}{r.shared ? ' · shared' : ''}</small>
-      </li>
-    ))}
-  </ul>
+
+  <section class="folders">
+    <div class="row">
+      <h2>Folders</h2>
+      <span class="count">{folders.length}</span>
+    </div>
+    {folders.length > 0 && (
+      <ul class="chips-row">{folders.map((f) => <li class="chip">{f.name}</li>)}</ul>
+    )}
+    <form id="nf" class="nf">
+      <input id="fname" placeholder="New folder name" />
+      <button>Create</button>
+    </form>
+  </section>
 
   <script is:inline>
-    const up = document.getElementById('up');
-    if (up) up.addEventListener('click', async () => {
-      up.disabled = true; up.textContent = 'Upgrading…';
-      await fetch('/api/billing/checkout', { method: 'POST' });
-      location.reload();
-    });
     document.getElementById('nf').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('fname').value;
@@ -62,10 +69,43 @@ const reports = await listReports(uid);
       await fetch('/api/folders', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }) });
       location.reload();
     });
-    document.getElementById('logout').addEventListener('click', async (e) => {
-      e.preventDefault();
-      await fetch('/api/auth/logout', { method: 'POST' });
-      location.href = '/login';
-    });
   </script>
+
+  <style>
+    .row { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 1rem; }
+    .row h1, .row h2 { margin: 0; }
+    .count {
+      font-size: 0.75rem; font-weight: 700; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.5rem;
+    }
+    .muted { color: var(--muted); }
+    .empty { border: 1px dashed var(--border); border-radius: 12px; padding: 1.5rem; }
+    .empty p { margin: 0 0 0.4rem; }
+    .cards { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
+    .rcard {
+      border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem;
+      transition: border-color 0.15s;
+    }
+    .rcard:hover { border-color: var(--accent); }
+    .rcard-title { font-size: 1.05rem; font-weight: 600; }
+    .rcard-meta { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.35rem; font-size: 0.83rem; color: var(--muted); }
+    .chip {
+      font-size: 0.72rem; padding: 0.1rem 0.5rem; border: 1px solid var(--border);
+      border-radius: 999px; color: var(--muted); list-style: none;
+    }
+    .chip-accent { color: var(--accent); border-color: var(--accent); }
+    .folders { margin-top: 2.5rem; }
+    .chips-row { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 0 0 1rem; }
+    .nf { display: flex; gap: 0.4rem; max-width: 360px; }
+    .nf input {
+      flex: 1; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--fg);
+    }
+    .nf input:focus { outline: none; border-color: var(--accent); }
+    .nf button {
+      padding: 0.45rem 0.8rem; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--fg); cursor: pointer;
+    }
+    .nf button:hover { border-color: var(--accent); }
+  </style>
 </Layout>
