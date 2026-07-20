@@ -28,19 +28,6 @@ export const prerender = false;
       </form>
 
       <p id="msg" class="auth-msg"></p>
-
-      <div id="done" class="auth-done" style="display:none">
-        <p class="auth-done-h">✓ Account created</p>
-        <p class="auth-sub">Copy your MCP API key now — it's shown <strong>only once</strong>:</p>
-        <div class="key-row">
-          <code id="key"></code>
-          <button type="button" id="copy" class="copy-btn">Copy</button>
-        </div>
-        <p class="auth-next">
-          <a href="/docs/install">Install the MCP server →</a>
-          <a href="/dashboard">Go to dashboard →</a>
-        </p>
-      </div>
     </div>
     <p class="auth-alt"><small>Already have an account? <a href="/login">Log in</a></small></p>
   </div>
@@ -64,14 +51,10 @@ export const prerender = false;
         btn.disabled = false; btn.textContent = 'Create account';
         return;
       }
-      document.getElementById('key').textContent = d.apiKey;
-      f.style.display = 'none';
-      document.getElementById('done').style.display = 'block';
-    });
-    document.getElementById('copy').addEventListener('click', async () => {
-      const key = document.getElementById('key').textContent;
-      try { await navigator.clipboard.writeText(key); document.getElementById('copy').textContent = 'Copied'; }
-      catch { document.getElementById('copy').textContent = 'Copy failed'; }
+      // Account created + logged in. Send them to their profile to generate
+      // their first API key.
+      btn.textContent = 'Account created ✓';
+      location.href = '/dashboard/account?welcome=1';
     });
   </script>
 
@@ -146,28 +129,6 @@ export const prerender = false;
     .auth button[type='submit']:hover { opacity: 0.92; }
     .auth button[type='submit']:disabled { opacity: 0.6; cursor: default; }
     .auth-msg { color: #cf222e; font-size: 0.88rem; min-height: 1.1rem; margin: 0.9rem 0 0; }
-    .auth-done-h { font-weight: 700; color: #1a7f37; margin: 0 0 0.5rem; }
-    .key-row { display: flex; gap: 0.5rem; align-items: stretch; margin: 0.5rem 0 1rem; }
-    .key-row code {
-      flex: 1;
-      overflow-x: auto;
-      white-space: nowrap;
-      padding: 0.5rem 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--code-bg);
-    }
-    .copy-btn {
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--fg);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
-    .copy-btn:hover { border-color: var(--accent); }
-    .auth-next { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0; }
     .auth-alt { text-align: center; margin-top: 1.25rem; color: var(--muted); }
   </style>
 </Layout>

@@ -12,12 +12,21 @@ if (!uid) return Astro.redirect('/login');
 const user = await getProvider().users.getById(uid);
 const tier = await tierForUser(uid);
 const keys = await listApiKeys(uid);
+const welcome = Astro.url.searchParams.get('welcome') === '1';
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 <DashboardLayout active="account" email={user?.email} tier={tier} title="Account — Table Intelligence">
   <h1>Account</h1>
   <p class="muted">{user?.email} · plan <strong>{tier}</strong>
     {tier !== 'paid' && <> · <a href="/pricing">Upgrade</a></>}</p>
+
+  {welcome && (
+    <div class="welcome">
+      <p class="welcome-h">👋 Welcome to Table Intelligence!</p>
+      <p class="muted">You're on a {tier} plan. To connect the MCP server to your AI agent,
+        generate your first API key below, then follow the <a href="/docs/install">install guide</a>.</p>
+    </div>
+  )}
 
   <div class="head sub"><h2>API keys</h2><span class="count">{keys.length}</span>
     <button class="btn-primary ml" id="new-key">Generate new key</button></div>
@@ -30,7 +39,10 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'sho
   </div>
 
   {keys.length === 0 ? (
-    <p class="muted">No keys yet. Generate one to connect your MCP server.</p>
+    <div class="firstkey">
+      <p><strong>Generate your first API key</strong> to connect the MCP server to your AI agent.</p>
+      <button class="btn-primary" id="first-key">Generate API key</button>
+    </div>
   ) : (
     <ul class="klist">
       {keys.map((k) => (
@@ -45,13 +57,18 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'sho
   )}
 
   <script is:inline>
-    document.getElementById('new-key').addEventListener('click', async () => {
+    async function generateKey() {
       const r = await fetch('/api/account/api-keys', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'key' }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.apiKey) { alert(d.message || d.error || 'Could not create key.'); return; }
       document.getElementById('new-key-val').textContent = d.apiKey;
       document.getElementById('new-key-box').style.display = 'block';
-    });
+      const first = document.getElementById('first-key');
+      if (first) first.closest('.firstkey').style.display = 'none';
+      document.getElementById('new-key-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    document.getElementById('new-key').addEventListener('click', generateKey);
+    document.getElementById('first-key')?.addEventListener('click', generateKey);
     document.getElementById('copy-key').addEventListener('click', async () => {
       await navigator.clipboard.writeText(document.getElementById('new-key-val').textContent).catch(() => {});
       document.getElementById('copy-key').textContent = 'Copied';
@@ -69,6 +86,11 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'sho
     .head.sub { display:flex; align-items:center; gap:0.6rem; margin:2.2rem 0 0.3rem; }
     .head.sub h2 { margin:0; font-size:1.2rem; } .ml { margin-left:auto; }
     .count { font-size:0.72rem; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0.05rem 0.5rem; }
+    .welcome { border:1px solid var(--accent); border-radius:10px; padding:1rem 1.1rem; margin:1.2rem 0 0; background:color-mix(in srgb, var(--accent) 6%, transparent); }
+    .welcome-h { font-weight:700; margin:0 0 0.3rem; }
+    .welcome .muted { max-width:none; }
+    .firstkey { border:1px dashed var(--accent); border-radius:12px; padding:1.4rem 1.2rem; margin:1.2rem 0 0; display:grid; gap:0.8rem; justify-items:start; }
+    .firstkey p { margin:0; }
     .keybox { border:1px solid var(--accent); border-radius:10px; padding:1rem 1.1rem; margin:1rem 0; }
     .key-row { display:flex; gap:0.5rem; align-items:stretch; }
     .key-row code { flex:1; overflow-x:auto; white-space:nowrap; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:8px; background:var(--bg-soft); }

@@ -1,5 +1,6 @@
 ---
 // Shared top navigation for the marketing/content tabs.
+import { verifySession, SESSION_COOKIE } from '@server/lib/session';
 interface Props { active?: string }
 const { active } = Astro.props;
 const tabs = [
@@ -9,6 +10,9 @@ const tabs = [
   { label: 'Docs', href: '/docs' },
   { label: 'Pricing', href: '/pricing' },
 ];
+// Auth-aware: on SSR-rendered pages we know whether the visitor is logged in
+// and can offer Dashboard / Account instead of Sign in / Start free.
+const loggedIn = !!verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
 ---
 <header class="ti-nav">
   <div class="ti-nav-row">
@@ -17,8 +21,17 @@ const tabs = [
       {tabs.map((t) => (
         <a href={t.href} class={active === t.label ? 'on' : ''}>{t.label}</a>
       ))}
-      <a href="/login" class="ti-signin">Sign in</a>
-      <a href="/signup" class="ti-cta">Start free</a>
+      {loggedIn ? (
+        <>
+          <a href="/dashboard" class={active === 'Dashboard' ? 'on' : ''}>Dashboard</a>
+          <a href="/dashboard/account" class="ti-cta">Account</a>
+        </>
+      ) : (
+        <>
+          <a href="/login" class="ti-signin">Sign in</a>
+          <a href="/signup" class="ti-cta">Start free</a>
+        </>
+      )}
     </nav>
   </div>
 </header>

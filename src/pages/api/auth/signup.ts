@@ -20,6 +20,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     path: '/', httpOnly: true, sameSite: 'lax', secure: import.meta.env.PROD,
     maxAge: 60 * 60 * 24 * 30,
   });
-  // apiKey is shown once — the user pastes it into their MCP config.
-  return json({ ok: true, apiKey: res.apiKey });
+  // No API key is minted at signup — the user generates one from their
+  // account page. The client redirects there next.
+  return json({ ok: true });
 };
