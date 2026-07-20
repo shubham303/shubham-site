@@ -1,0 +1,117 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const links = [
+  { label: 'Books', href: '/books/' },
+  { label: 'Book a call', href: 'https://calendly.com/randiveshubham3/30min' },
+  { label: 'Email', href: 'mailto:randiveshubham3@gmail.com' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/shubham-randive-303/' },
+  { label: 'Twitter', href: 'https://x.com/shubham_19hshs' },
+  { label: 'Reddit', href: 'https://www.reddit.com/user/No_Incident_6009/' },
+  { label: 'Medium', href: 'https://medium.com/@randiveshubham3' },
+  { label: 'Substack', href: 'https://substack.com/@shubhamrandive' },
+  { label: 'GitHub', href: 'https://github.com/shubham303' },
+];
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<Layout title="Shubham Randive">
+  <header class="intro">
+    <div class="intro-text">
+      <h1>Shubham Randive</h1>
+      <p class="tagline">
+        ML engineer and AI generalist who builds things, ships them, and occasionally
+        falls down a deep learning rabbit hole.
+      </p>
+      <nav class="links">
+        {links.map((l) => <a href={l.href}>{l.label}</a>)}
+      </nav>
+    </div>
+    <img class="avatar" src="/photo.jpg" alt="Shubham Randive" width="112" height="112" />
+  </header>
+
+  <section class="about">
+    <p>
+      I build AI agents, ship software, and occasionally build entire products — like
+      <a href="https://www.mahajob.in/" rel="noopener">mahajob.in</a>. By trade I'm a machine
+      learning engineer; in practice I wander into whatever the problem needs — training a
+      model, standing up a product, losing an afternoon to SEO like it's a personality
+      trait, or slowly teaching myself sales and marketing. Off the keyboard, I'm helping my
+      wife keep the house in order and (bravely) learning to cook.
+    </p>
+    <p>
+      Lately I'm trying to climb out of the tech bubble and actually understand the problems
+      non-technical people run into every day — the unglamorous ones that tech could quietly
+      solve. That's the goal: find those problems, solve them, and hopefully earn a living on
+      the way. <a href="/blog/why-i-built-mahajob/">mahajob.in was my first crack at it</a>.
+    </p>
+    <p>
+      Now and then I disappear into a deep learning paper that catches my eye. This site is
+      mostly where I think out loud about data science — ideas, methods, papers worth a read,
+      and the occasional "here's a thing I didn't expect."
+    </p>
+    <p>
+      If you've got data, an AI idea, or something that needs building,
+      <a href="mailto:randiveshubham3@gmail.com">say hi</a>.
+    </p>
+  </section>
+
+  <hr />
+
+  <section class="writing">
+    <h2>Projects</h2>
+    <ul class="post-list">
+      <li>
+        <a href="/table-intelligence">Table Intelligence</a>
+        <span class="muted"> — a suite of AI agents for your business (an MCP server).</span>
+      </li>
+      <li>
+        <a href="https://www.mahajob.in/" rel="noopener">mahajob.in</a>
+        <span class="muted"> — jobs for non-technical workers.</span>
+      </li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section class="writing">
+    <h2>Writing</h2>
+    {
+      posts.length === 0 ? (
+        <p class="muted">Posts coming soon.</p>
+      ) : (
+        <ul class="post-list">
+          {posts.map((post) => (
+            <li>
+              <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+              <time datetime={post.data.date.toISOString()}>{fmt(post.data.date)}</time>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  .intro { display: flex; gap: 1.75rem; align-items: center; justify-content: space-between; }
+  .intro-text h1 { margin: 0 0 0.35rem; font-size: 1.95rem; }
+  .tagline { margin: 0 0 0.85rem; color: var(--muted); }
+  .links { display: flex; flex-wrap: wrap; gap: 1.1rem; }
+  .avatar { border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex: none; }
+  .about p { margin: 0.85rem 0; }
+  .muted { color: var(--muted); }
+  .post-list { list-style: none; padding: 0; margin: 0; }
+  .post-list li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+  .post-list time { color: var(--muted); font-size: 0.9em; white-space: nowrap; }
+  @media (max-width: 520px) {
+    .intro { flex-direction: column-reverse; align-items: flex-start; }
+  }
+</style>

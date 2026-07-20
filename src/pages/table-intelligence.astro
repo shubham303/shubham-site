@@ -1,5 +1,7 @@
 ---
-// The product landing is the home page now.
+// The platform landing — always reachable here, regardless of the PLATFORM_HOME
+// flag that controls what the site root (/) shows.
+import PlatformHome from '../components/home/PlatformHome.astro';
 export const prerender = false;
-return Astro.redirect('/', 301);
 ---
+<PlatformHome />
