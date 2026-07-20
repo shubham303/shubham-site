@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Seed a demo account + sample data into the LOCAL dev server for testing.
 #
-# Local dev uses a file-based DuckDB (.data/control.duckdb) — no setup, as long
-# as DATABASE_URL is unset. Start the server, then run this.
+# Local dev reads the Neon `dev` branch (DATABASE_URL in .env). Start the
+# server, then run this.
 #
 #   Terminal 1:  npm run dev
 #   Terminal 2:  ./scripts/seed-demo.sh

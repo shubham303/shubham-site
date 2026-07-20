@@ -1,13 +1,15 @@
 # Table Intelligence — website runbook
 
 This site is now the **app + control plane**: user accounts, subscriptions, reports/folders,
-dashboard, and the APIs the local MCP server calls. SSR via the Vercel adapter. DB facade:
-**DuckDB locally** (a file under `.data/`), **Neon/Postgres in production** (`DATABASE_URL`).
+dashboard, and the APIs the local MCP server calls. SSR via the Vercel adapter. DB:
+**Neon Postgres** via `DATABASE_URL` — the `dev` branch locally, the `main` branch in
+production (see `NEON.md`).
 
 ## Run locally (no accounts needed)
 ```bash
 npm install
-npm run dev            # http://localhost:4321  (creates .data/control.duckdb on first request)
+cp .env.example .env    # set DATABASE_URL to the Neon dev branch + a SESSION_SECRET
+npm run dev            # http://localhost:4321  (schema auto-creates on first request)
 ```
 Pages: `/product` (landing + install guide), `/pricing`, `/signup`, `/login`, `/dashboard`,
 `/dashboard/reports/[id]`, `/r/[token]` (public shared report).
@@ -27,10 +29,10 @@ Pages: `/product` (landing + install guide), `/pricing`, `/signup`, `/login`, `/
 - `GET /api/reports`, `GET /api/reports/:id`, `POST /api/folders`, `GET /api/folders`
 
 ## Architecture (strict layering, TS)
-`src/server/db` (facade DuckDB/Postgres + factory) → `src/server/repositories` (one per table,
+`src/server/db` (Postgres facade + factory) → `src/server/repositories` (one per table,
 access only) → `src/server/services` (auth, entitlement, report, billing) → `src/pages/api` +
 dashboard pages (endpoints). Passwords: scrypt (`node:crypto`). Sessions: signed cookie.
 
 ## Production env vars (set in Vercel)
 `DATABASE_URL` (Neon), `SESSION_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`,
-`RAZORPAY_WEBHOOK_SECRET`. Without `DATABASE_URL` it uses local DuckDB.
+`RAZORPAY_WEBHOOK_SECRET`. The app requires `DATABASE_URL` (Neon) and errors clearly if unset.

@@ -1,7 +1,7 @@
 import type { Database } from '../db/database';
 
 // A prospective client found by the agent for a campaign. details/email_ids are
-// JSON stored as text (facade works on DuckDB + Postgres identically).
+// JSON stored as text.
 export interface ProspectRow {
   id: string;
   user_id: string;

@@ -25,14 +25,14 @@ Roadmap items deferred past MVP. See `RUNBOOK.md` for the current architecture.
     email/password with verification + reset, **social login** (Google/GitHub),
     optional **magic links**, and its **apiKey** plugin to consolidate the MCP
     Bearer-key/entitlement flow.
-  - Requires moving control-plane storage off DuckDB to a Better-Auth-supported
-    adapter — **SQLite (or Supabase/Postgres) for dev + Postgres/Neon in prod**
-    (analytics keeps using DuckDB locally; unaffected).
+  - Control-plane storage is already on a Better-Auth-supported adapter
+    (**Neon Postgres** via `DATABASE_URL`); analytics still runs on DuckDB
+    locally in the separate MCP server and is unaffected.
   - Social providers need OAuth credentials (Google Cloud / GitHub) — a manual
     setup step.
   - Do this together with RBAC above (Better Auth has `admin` / `organization`
     plugins that can back the role model).
 
 > MVP for now: keep the existing users-table + scrypt-hashed passwords, backed by
-> Supabase Postgres via `DATABASE_URL`. Better Auth + RBAC is the "one fine day"
+> Neon Postgres via `DATABASE_URL`. Better Auth + RBAC is the "one fine day"
 > upgrade.

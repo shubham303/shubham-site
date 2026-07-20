@@ -18,8 +18,8 @@ function createDatabase(): Database {
   if (!url || !/^postgres/i.test(url)) {
     throw new Error(
       'DATABASE_URL is not set (or is not a postgres:// URL). Set it to your ' +
-      'Supabase connection string in .env (local) and in the Vercel project (prod). ' +
-      'See SUPABASE.md.',
+      'Neon connection string in .env (local, dev branch) and in the Vercel project ' +
+      '(prod, main branch). See NEON.md.',
     );
   }
   return new PostgresDatabase(url);

@@ -1,6 +1,8 @@
-// DB facade. The app talks to one Postgres database (Supabase) via DATABASE_URL,
+// DB facade. The app talks to one Postgres database (Neon) via DATABASE_URL,
 // for both local dev and production. Use `?` placeholders everywhere; they're
 // rewritten to `$1,$2,...` for Postgres.
+
+import postgres from 'postgres';
 
 export interface Database {
   execute(sql: string, params?: unknown[]): Promise<any[]>;
@@ -11,9 +13,7 @@ export class PostgresDatabase implements Database {
   private sql: any;
 
   constructor(url: string) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const postgres = require('postgres');
-    // Supabase/Neon require SSL; `prepare: false` is needed for pooled
+    // Neon requires SSL; `prepare: false` is needed for pooled
     // (pgBouncer transaction-mode) connections used on serverless.
     this.sql = postgres(url, { max: 5, prepare: false, ssl: 'require' });
   }

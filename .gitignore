@@ -15,5 +15,7 @@ node_modules/
 .vscode/
 .vercel
 
-# local control-plane DuckDB (dev)
-.data/
+# agent tooling (Neon skill, etc.)
+.agents/
+.neon
+skills-lock.json
