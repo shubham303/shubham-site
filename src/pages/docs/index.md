@@ -18,7 +18,7 @@ Two ideas make it different from asking an LLM to "analyze this":
 
 ## Where to go next
 
-- [Install](/docs/install) — add the MCP server to Claude Cowork, Desktop, Code, Codex or Cursor.
+- [Install](/docs/install) — add the MCP server to Claude Code, Claude Desktop, Codex, Windsurf, Cline, Zed, or VS Code (Copilot).
 - [Quickstart](/docs/quickstart) — your first analysis and saved report.
 - [Tools reference](/docs/tools) — what the server can do.
 - [Reports & dashboard](/docs/reports) — save, organize and share findings.
