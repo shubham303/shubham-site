@@ -2,13 +2,22 @@
 const { frontmatter } = Astro.props;
 const title: string = frontmatter?.title ?? 'Documentation';
 const path = Astro.url.pathname.replace(/\/$/, '');
+// Grouped sidebar nav. `items` are flat links under a group heading.
 const nav = [
-  { href: '/docs', label: 'Overview' },
-  { href: '/docs/install', label: 'Install' },
-  { href: '/docs/quickstart', label: 'Quickstart' },
-  { href: '/docs/tools', label: 'Tools reference' },
-  { href: '/docs/reports', label: 'Reports & dashboard' },
-  { href: '/docs/privacy', label: 'Privacy & data' },
+  { group: 'Getting started', items: [
+    { href: '/docs', label: 'Overview' },
+    { href: '/docs/install', label: 'Install' },
+    { href: '/docs/quickstart', label: 'Quickstart' },
+  ]},
+  { group: 'Agents', items: [
+    { href: '/docs/agents/data-analysis', label: 'Data analysis' },
+    { href: '/docs/agents/outreach', label: 'Outreach' },
+  ]},
+  { group: 'Reference', items: [
+    { href: '/docs/tools', label: 'Tools reference' },
+    { href: '/docs/reports', label: 'Reports & dashboard' },
+    { href: '/docs/privacy', label: 'Privacy & data' },
+  ]},
 ];
 ---
 <!doctype html>
@@ -44,8 +53,13 @@ const nav = [
       <aside class="side">
         <p class="side-h">Documentation</p>
         <nav>
-          {nav.map((n) => (
-            <a href={n.href} class={path === n.href ? 'active' : ''}>{n.label}</a>
+          {nav.map((g) => (
+            <div class="side-group">
+              <p class="side-g">{g.group}</p>
+              {g.items.map((n) => (
+                <a href={n.href} class={path === n.href ? 'active' : ''}>{n.label}</a>
+              ))}
+            </div>
           ))}
         </nav>
       </aside>
@@ -120,6 +134,10 @@ const nav = [
   .side nav a:hover { color: var(--fg); background: var(--bg-soft); text-decoration: none; }
   .side nav a.active { color: var(--fg); background: var(--bg-soft); font-weight: 600;
     box-shadow: inset 2px 0 0 var(--accent); }
+  .side-group { margin-top: 1rem; }
+  .side-group:first-child { margin-top: 0; }
+  .side-g { text-transform: uppercase; letter-spacing: .07em; font-size: .66rem; font-weight: 700;
+    color: var(--muted); margin: 0 0 .3rem; padding: 0 .6rem; }
 
   .content { max-width: 720px; padding: 2rem 0 5rem; min-width: 0; }
   .content h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 .6rem; }
