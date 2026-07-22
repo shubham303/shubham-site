@@ -14,6 +14,7 @@
 // wire contract flow through here.
 
 import type { APIContext } from 'astro';
+import { APIError } from 'better-auth/api';
 import { auth, isBillingEnabled } from './auth';
 import { getDb } from '../../db';
 
@@ -35,11 +36,26 @@ const json = (data: unknown, status = 200): Response =>
  *   - a BetterAuth session cookie (browser), OR
  *   - an `x-api-key: ti_…` header (MCP server).
  * Returns null if no credential is present or it's invalid.
+ *
+ * May throw a BetterAuth `APIError` — e.g. when an `x-api-key` request trips
+ * the apiKey plugin's per-key rate limit (TOO_MANY_REQUESTS). Such throws
+ * carry the intended HTTP status + body and are mapped to a proper response by
+ * `withUser`/`withPro`; they must NOT bubble up to Astro as an opaque 500.
  */
 export async function userFromRequest(request: Request): Promise<AuthUser | null> {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) return null;
   return { id: session.user.id, email: session.user.email };
+}
+
+/**
+ * Map a BetterAuth `APIError` to a JSON Response using the error's own status
+ * and body (so a rate-limit throw becomes a 429 with `tryAgainIn`, not a 500).
+ * `better-call`'s APIError exposes `.statusCode` (number) and `.body`.
+ */
+function apiErrorResponse(e: APIError): Response {
+  const body = e.body ?? { message: e.message };
+  return json(body, e.statusCode || 500);
 }
 
 interface SubscriptionRow {
@@ -105,7 +121,16 @@ export async function withUser(
   ctx: APIContext,
   fn: (user: AuthUser) => Promise<Response> | Response,
 ): Promise<Response> {
-  const user = await userFromRequest(ctx.request);
+  let user: AuthUser | null;
+  try {
+    user = await userFromRequest(ctx.request);
+  } catch (e) {
+    // A BetterAuth APIError (e.g. apiKey rate limit) carries its own HTTP
+    // status — surface it faithfully instead of letting Astro turn the throw
+    // into an opaque 500.
+    if (e instanceof APIError) return apiErrorResponse(e);
+    throw e;
+  }
   if (!user) return json({ error: 'not_authenticated' }, 401);
   return fn(user);
 }

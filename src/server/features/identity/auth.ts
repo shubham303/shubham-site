@@ -92,6 +92,14 @@ function buildAuth(): ReturnType<typeof betterAuth> {
       enableSessionForAPIKeys: true,
       requireName: false,
       startingCharactersConfig: { shouldStore: true, charactersLength: 11 },
+      // The plugin's default rate limit (10 requests / 24h per key) is far too
+      // low for a first-party agent: listing campaigns + adding each prospect
+      // email blows through it in seconds, and the throw surfaces as an opaque
+      // 500. The MCP server is a trusted single key, so allow a generous burst
+      // instead. NOTE: this only governs keys created WITHOUT an explicit limit
+      // — existing keys store NULL and are evaluated against these defaults,
+      // so raising this here also unblocks an already-capped key immediately.
+      rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 500 },
     }),
   ];
 
