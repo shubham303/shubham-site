@@ -1,13 +1,16 @@
 ---
-layout: ../../layouts/Docs.astro
-title: Reports & dashboard
+layout: ../../../../layouts/Docs.astro
+title: Data analysis — Reports & dashboard
 ---
 
-# Reports & dashboard
+# Data analysis — Reports & dashboard
+
+When the [Data analysis agent](/docs/agents/data-analysis) gives you an answer worth keeping, ask it
+to save it as a report. Saved reports live on your account and show up on your dashboard.
 
 ## Saving a report
 
-Ask your agent to save its findings:
+Ask the agent to save its findings:
 
 > "Save this as a report titled 'Q3 revenue review' in the Q3 folder."
 
