@@ -272,6 +272,38 @@ it inline:
 You can also add it from the command palette → **MCP: Add Server**. VS Code will ask you to approve
 any workspace-level `mcp.json` the first time.
 
+## ZCode
+
+ZCode keeps MCP servers under a nested `mcp.servers` key (not a top-level `mcpServers` object, unlike
+most agents on this page):
+
+- **User (global):** `~/.zcode/cli/config.json`
+- **Workspace (per project):** `<project>/.zcode/config.json`
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "table-intelligence": {
+        "command": "uvx",
+        "args": ["--from", "tabint", "tabint-mcp"],
+        "env": {
+          "TABINT_API_KEY": "ti_xxx",
+          "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
+        }
+      }
+    }
+  }
+}
+```
+
+Servers from both scopes connect **automatically** at session start — there's no manual
+authorization step. Inspect status and reconnect under **Settings → MCP**.
+
+> ZCode also reads `.agents/mcp.json` (with a top-level `mcpServers` key) as a compatibility
+> fallback, but only within a scope that has no servers in `.zcode/config.json`. Prefer the
+> `mcp.servers` shape above.
+
 ---
 
 ## Verify it works
