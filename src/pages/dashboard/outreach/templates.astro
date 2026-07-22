@@ -140,6 +140,8 @@ const templates = await listTemplates(user.id);
     .btn-primary:hover { filter:brightness(1.05); } .btn-primary:disabled { opacity:0.6; }
     .btn-ghost { padding:0.5rem 1rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); border-radius:8px; cursor:pointer; }
     .btn-ghost:hover { border-color:var(--accent); }
+    /* compact variant must beat the base button padding (higher specificity) */
+    .btn-primary.sm, .btn-ghost.sm { padding:0.35rem 0.7rem; font-size:0.82rem; }
 
     .drawer-x { border:none; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:0.3rem 0.5rem; border-radius:6px; }
     .drawer-x:hover { color:var(--fg); background:var(--bg-soft); }
