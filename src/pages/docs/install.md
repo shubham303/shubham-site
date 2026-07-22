@@ -5,7 +5,7 @@ title: Install
 
 # Install the MCP server
 
-Table Intelligence ships as a **local MCP server** (`tabint`). Your agent starts it on your
+Table Intelligence ships as a **local MCP server**. Your agent starts it on your
 machine over stdio; it talks to this website only to read your role (`free` or `pro`) and to save the
 reports, campaigns, and emails you explicitly ask it to save. Your datasets never leave your
 machine.
@@ -15,43 +15,40 @@ location and shape differ. This page covers each one.
 
 ## Prerequisites
 
-1. **Python 3.10 or newer** — `python3 --version`.
-2. **[uv](https://docs.astral.sh/uv/)** (recommended) or plain `pip`/`venv`.
-3. **An API key** — [create a free account](/signup) (it includes a 3‑day trial) and copy the
+1. **[uv](https://docs.astral.sh/uv/)** (recommended) — it runs the server in an isolated
+   environment with no manual setup. Install it with
+   `curl -LsSf https://astral.sh/uv/install.sh | sh` (macOS/Linux) or
+   `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"` (Windows).
+2. **An API key** — [create a free account](/signup) (it includes a 3‑day trial) and copy the
    `ti_...` key from **Account → API keys**.
-4. **The package itself.** It is **not on PyPI** — install it from a local clone:
 
-   ```bash
-   git clone https://github.com/shubham303/TableIntelligence.git
-   cd TableIntelligence
+That's it. The package is on PyPI (`tabint`), so `uvx` downloads and runs it on first launch —
+**no `git clone`, no virtualenv, no `pip install`**.
 
-   # with uv (recommended)
-   uv sync --extra mcp            # creates .venv/ and installs everything
-
-   # …or with plain pip
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -e ".[mcp]"
-   ```
-
-   Remember the **absolute path** to this clone and its `.venv` — you'll paste it into the
-   config blocks below.
+> **Why `--from tabint tabint-mcp`?** The *package* is named `tabint`; `tabint-mcp` is the server
+> command inside it. `uvx --from tabint tabint-mcp` tells uv to install the `tabint` package and
+> then run its `tabint-mcp` entry point.
 
 ## The shared command block
 
-Every agent below runs the same thing: the venv's Python, invoking the `tabint.mcp_server`
-module, with two environment variables. All examples assume you cloned the repo to
-`~/codes/TableIntelligence` — **replace that path with your own**.
+Every agent below runs the same thing — `uvx` launching the server, with two environment
+variables:
 
 | Field | Value |
 |-------|-------|
-| `command` | `/Users/<you>/codes/TableIntelligence/.venv/bin/python` |
-| `args` | `["-m", "tabint.mcp_server"]` |
+| `command` | `uvx` |
+| `args` | `["--from", "tabint", "tabint-mcp"]` |
 | `env.TABINT_API_KEY` | your `ti_...` key |
 | `env.TABINT_CONTROL_PLANE_URL` | `https://shubhamrandive.com` |
 
-If you'd rather invoke the console script directly, `/Users/<you>/codes/TableIntelligence/.venv/bin/tabint-mcp`
-works too — drop `args` and use it as the `command`. The module form above is the most portable.
+Prefer a one-off check first? Run it from your terminal:
+
+```bash
+TABINT_API_KEY=ti_xxx uvx --from tabint tabint-mcp --help
+```
+
+It should install quickly and print the server banner. If that works, the config blocks below will
+work too.
 
 ---
 
@@ -64,11 +61,10 @@ the config for you.
 
 ```bash
 claude mcp add table-intelligence \
-  /Users/<you>/codes/TableIntelligence/.venv/bin/python \
-  -- -m tabint.mcp_server \
-  -e TABINT_API_KEY=ti_xxx \
-  -e TABINT_CONTROL_PLANE_URL=https://shubhamrandive.com \
-  -s user
+  --env TABINT_API_KEY=ti_xxx \
+  --env TABINT_CONTROL_PLANE_URL=https://shubhamrandive.com \
+  -s user \
+  -- uvx --from tabint tabint-mcp
 ```
 
 `-s user` installs it globally; use `-s project` to check it into a repo's `.mcp.json`, or
@@ -83,8 +79,8 @@ claude mcp add table-intelligence \
 {
   "mcpServers": {
     "table-intelligence": {
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "ti_xxx",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -109,8 +105,8 @@ Add (or merge into) the `mcpServers` object:
 {
   "mcpServers": {
     "table-intelligence": {
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "ti_xxx",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -133,8 +129,8 @@ Codex keeps MCP servers in `~/.codex/config.toml`, one `[mcp_servers.<name>]` ta
 
 ```toml
 [mcp_servers.table-intelligence]
-command = "/Users/<you>/codes/TableIntelligence/.venv/bin/python"
-args = ["-m", "tabint.mcp_server"]
+command = "uvx"
+args = ["--from", "tabint", "tabint-mcp"]
 
 [mcp_servers.table-intelligence.env]
 TABINT_API_KEY = "ti_xxx"
@@ -147,6 +143,25 @@ Codex also has a `codex mcp add` helper in recent versions that writes the same 
 > (see openai/codex#3441). If the server doesn't show up, restart Codex or re-run
 > `codex mcp list` to force a re-scan.
 
+## Cursor
+
+Cursor reads `.cursor/mcp.json` (per project) or the **Settings → MCP** panel (global):
+
+```json
+{
+  "mcpServers": {
+    "table-intelligence": {
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
+      "env": {
+        "TABINT_API_KEY": "ti_xxx",
+        "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
+      }
+    }
+  }
+}
+```
+
 ## Windsurf
 
 Windsurf (Codeium) reads:
@@ -157,8 +172,8 @@ Windsurf (Codeium) reads:
 {
   "mcpServers": {
     "table-intelligence": {
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "ti_xxx",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -183,8 +198,8 @@ Cline stores MCP config in VS Code's global storage:
 {
   "mcpServers": {
     "table-intelligence": {
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "ti_xxx",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -209,8 +224,8 @@ Zed reads a `context_servers` block in settings.
 {
   "context_servers": {
     "table-intelligence": {
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "ti_xxx",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -235,8 +250,8 @@ it inline:
   "servers": {
     "table-intelligence": {
       "type": "stdio",
-      "command": "/Users/<you>/codes/TableIntelligence/.venv/bin/python",
-      "args": ["-m", "tabint.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "tabint", "tabint-mcp"],
       "env": {
         "TABINT_API_KEY": "${input:tabintKey}",
         "TABINT_CONTROL_PLANE_URL": "https://shubhamrandive.com"
@@ -266,14 +281,16 @@ In your agent, ask:
 > What's my Table Intelligence account status?
 
 The agent should call the **`account_status`** tool and report your role (`pro` or
-`free`). If it reports `free` even though you set `TABINT_API_KEY`, double-check the key and that
-the venv path is absolute and correct.
+`free`). If it reports `free` even though you set `TABINT_API_KEY`, double-check the key value and
+that it starts with `ti_`.
 
 ## Troubleshooting
 
-- **"command not found" / process exits immediately.** The `command` path must be absolute and
-  must point at the venv's `python` binary *after* you've run `uv sync --extra mcp` (or
-  `pip install -e ".[mcp]"`). Re-check the path; do not rely on `PATH`.
+- **`uvx: command not found`.** Install uv:
+  `curl -LsSf https://astral.sh/uv/install.sh | sh` (macOS/Linux) or
+  `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"` (Windows), then restart your shell.
+- **First launch is slow.** `uvx` downloads the package and its dependencies on first run; after
+  that they're cached and startup is fast. If it stalls, check your network — uv pulls from PyPI.
 - **`account_status` says `free` with a key set.** Verify `TABINT_API_KEY` is spelled correctly
   and starts with `ti_`. The key is validated against
   `TABINT_CONTROL_PLANE_URL` — leave it at `https://shubhamrandive.com` unless you've been told
@@ -285,10 +302,10 @@ the venv path is absolute and correct.
 - **Server shows as failed in the agent.** Run the command manually in a terminal to see the
   startup error:
   ```bash
-  /Users/<you>/codes/TableIntelligence/.venv/bin/python -m tabint.mcp_server
+  TABINT_API_KEY=ti_xxx uvx --from tabint tabint-mcp
   ```
-  It should start and wait silently for stdio input. If it crashes, the traceback will tell you
-  why (most often a missing dependency or wrong Python version).
+  It should install (first run) and then wait silently for stdio input. If it crashes, the
+  traceback will tell you why (most often a stale uv cache — fix with `uv cache clean`).
 
 ## Environment variables
 
