@@ -2,13 +2,22 @@
 const { frontmatter } = Astro.props;
 const title: string = frontmatter?.title ?? 'Documentation';
 const path = Astro.url.pathname.replace(/\/$/, '');
+// Grouped sidebar nav. `items` are flat links under a group heading.
 const nav = [
-  { href: '/docs', label: 'Overview' },
-  { href: '/docs/install', label: 'Install' },
-  { href: '/docs/quickstart', label: 'Quickstart' },
-  { href: '/docs/tools', label: 'Tools reference' },
-  { href: '/docs/reports', label: 'Reports & dashboard' },
-  { href: '/docs/privacy', label: 'Privacy & data' },
+  { group: 'Getting started', items: [
+    { href: '/docs', label: 'Overview' },
+    { href: '/docs/install', label: 'Install' },
+    { href: '/docs/quickstart', label: 'Quickstart' },
+  ]},
+  { group: 'Agents', items: [
+    { href: '/docs/agents/data-analysis', label: 'Data analysis' },
+    { href: '/docs/agents/outreach', label: 'Outreach' },
+  ]},
+  { group: 'Reference', items: [
+    { href: '/docs/tools', label: 'Tools reference' },
+    { href: '/docs/reports', label: 'Reports & dashboard' },
+    { href: '/docs/privacy', label: 'Privacy & data' },
+  ]},
 ];
 ---
 <!doctype html>
@@ -44,8 +53,13 @@ const nav = [
       <aside class="side">
         <p class="side-h">Documentation</p>
         <nav>
-          {nav.map((n) => (
-            <a href={n.href} class={path === n.href ? 'active' : ''}>{n.label}</a>
+          {nav.map((g) => (
+            <div class="side-group">
+              <p class="side-g">{g.group}</p>
+              {g.items.map((n) => (
+                <a href={n.href} class={path === n.href ? 'active' : ''}>{n.label}</a>
+              ))}
+            </div>
           ))}
         </nav>
       </aside>
@@ -116,10 +130,14 @@ const nav = [
   .side-h { text-transform: uppercase; letter-spacing: .07em; font-size: .72rem; font-weight: 700;
     color: var(--muted); margin: 0 0 .6rem; }
   .side nav { display: flex; flex-direction: column; gap: .1rem; }
-  .side nav a { color: var(--muted); padding: .35rem .6rem; border-radius: 7px; font-size: .93rem; }
+  .side nav a { display: block; color: var(--muted); padding: .35rem .6rem; border-radius: 7px; font-size: .93rem; }
   .side nav a:hover { color: var(--fg); background: var(--bg-soft); text-decoration: none; }
   .side nav a.active { color: var(--fg); background: var(--bg-soft); font-weight: 600;
     box-shadow: inset 2px 0 0 var(--accent); }
+  .side-group { margin-top: 1rem; }
+  .side-group:first-child { margin-top: 0; }
+  .side-g { text-transform: uppercase; letter-spacing: .07em; font-size: .66rem; font-weight: 700;
+    color: var(--muted); margin: 0 0 .3rem; padding: 0 .6rem; }
 
   .content { max-width: 720px; padding: 2rem 0 5rem; min-width: 0; }
   .content h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 .6rem; }
@@ -134,7 +152,11 @@ const nav = [
   @media (max-width: 820px) {
     .shell { grid-template-columns: 1fr; gap: 0; }
     .side { position: static; padding-top: 1.2rem; }
-    .side nav { flex-flow: row wrap; gap: .3rem; }
+    /* Stack groups vertically; let each group's links wrap as chips. */
+    .side nav { gap: .8rem; }
+    .side-group { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: 0; }
+    .side-g { width: 100%; margin-bottom: .2rem; }
+    .side nav a { display: inline-block; border: 1px solid var(--border); }
     .content { padding-top: 1rem; }
   }
 </style>
