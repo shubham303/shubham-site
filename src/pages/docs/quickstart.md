@@ -37,4 +37,4 @@ your account. Saving needs an active trial or pro.
 ## 4. Read it on the web
 
 Open your [dashboard](/dashboard) to browse folders and reports, and share any report as a public
-link. See [Reports & dashboard](/docs/reports).
+link. See [Reports & dashboard](/docs/agents/data-analysis/reports).

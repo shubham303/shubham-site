@@ -71,11 +71,11 @@ that isn't real. Trust levels range from `high` → `moderate` → `low` → `no
 ## Where the output goes
 
 By default the answers just appear in your chat. When you want to keep something, ask the agent to
-[save it as a report](/docs/reports) — it lands on your [dashboard](/dashboard), where you can
+[save it as a report](/docs/agents/data-analysis/reports) — it lands on your [dashboard](/dashboard), where you can
 organise it into folders and share a public link.
 
 ## Next
 
 - [Install](/docs/install) the server, if you haven't.
 - [Quickstart](/docs/quickstart) walks through a first analysis end to end.
-- The full [tools reference](/docs/tools) lists every capability, if you want the complete map.
+- The full [tools reference](/docs/agents/data-analysis/tools) lists every capability, if you want the complete map.

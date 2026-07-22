@@ -1,12 +1,12 @@
 ---
-layout: ../../layouts/Docs.astro
-title: Tools reference
+layout: ../../../../layouts/Docs.astro
+title: Data analysis — Tools reference
 ---
 
-# Tools reference
+# Data analysis — Tools reference
 
-You don't call these directly — your agent picks the right tool from your question. This is what's
-available.
+You don't call these directly — the [Data analysis agent](/docs/agents/data-analysis) picks the right
+tool from your question. This is what's available to it.
 
 ## Every result is honest
 
@@ -45,4 +45,5 @@ All analytics are **free forever** and run entirely on your machine.
 | `list_reports`, `get_report` | Browse saved reports. |
 | `create_folder`, `list_folders` | Organize reports. |
 
-Saving reports needs an active trial or pro subscription — see [Pricing](/pricing).
+Saving reports needs an active trial or pro subscription — see [Pricing](/pricing). Saved reports
+land on your [dashboard](/docs/agents/data-analysis/reports), where you can organise and share them.
