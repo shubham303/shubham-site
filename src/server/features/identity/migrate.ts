@@ -10,6 +10,11 @@
 import { getMigrations } from 'better-auth/db';
 import { auth } from './auth';
 
+// Re-exported so db/index.ts can call it from ensureInit() without importing
+// auth.ts directly (which would pull the Razorpay client into the build graph
+// eagerly). The check itself lives next to the client it validates.
+export { ensureRazorpayConfigured } from './auth';
+
 let ran = false;
 
 export async function initAuthSchema(): Promise<void> {

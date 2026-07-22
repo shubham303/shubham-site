@@ -5,20 +5,23 @@
 // BetterAuth:
 //   - browser session cookie (JWT-backed, via the jwt plugin)
 //   - `x-api-key: ti_…` header (MCP server, via the apiKey plugin)
-// Any route gate (`withUser` / `withPro`) and the validate-key wire contract
-// flow through here.
+//
+// Roles are NOT stored on the user. "Is this user pro?" is derived from the
+// razorpay plugin's `subscription` table — a row with status `active` (paid)
+// or `trialing` (within the free-trial window) for the `pro` plan. All grant
+// / cancel / trial-expiry logic lives in the plugin + Razorpay webhooks; we
+// only READ here. Any route gate (`withUser` / `withPro`) and the validate-key
+// wire contract flow through here.
 
 import type { APIContext } from 'astro';
 import { auth } from './auth';
-import { identityRepository } from './repository';
-import { getActiveSubscription } from '../billing/service';
+import { getDb } from '../../db';
 
 export type Role = 'free' | 'pro';
 
 export interface AuthUser {
   id: string;
   email: string;
-  role: Role;
 }
 
 const json = (data: unknown, status = 200): Response =>
@@ -36,36 +39,57 @@ const json = (data: unknown, status = 200): Response =>
 export async function userFromRequest(request: Request): Promise<AuthUser | null> {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) return null;
-  return {
-    id: session.user.id,
-    email: session.user.email,
-    role: (session.user as { role?: string }).role === 'pro' ? 'pro' : 'free',
-  };
+  return { id: session.user.id, email: session.user.email };
+}
+
+interface SubscriptionRow {
+  status: string;
+  plan: string;
+  trialEnd: Date | null;
 }
 
 /**
- * Effective role for a user. `role` on the user row is the source of truth,
- * but we lazily demote `pro` → `free` when a pro trial has expired with no
- * active paid subscription. (Razorpay webhook will be the real pro grant.)
+ * The user's subscription row from the razorpay plugin's `subscription` table
+ * (referenceId = userId), or null if none.
+ */
+async function getProSubscription(userId: string): Promise<SubscriptionRow | null> {
+  const rows = await getDb().execute(
+    `select status, plan, "trialEnd" as trial_end
+       from subscription
+      where "referenceId" = ? and plan = 'pro'
+      order by "createdAt" desc
+      limit 1`,
+    [userId],
+  );
+  return (rows[0] as SubscriptionRow) ?? null;
+}
+
+/**
+ * Effective role. `pro` iff there's a `pro` subscription that is active (paid)
+ * or trialing within its trial window. Everything else — no subscription,
+ * expired/cancelled/paused/halted — resolves to `free`. The plugin + Razorpay
+ * webhooks own all status transitions; we only read.
  */
 export async function roleForUser(userId: string): Promise<Role> {
-  const user = await identityRepository.getById(userId);
-  if (!user || user.role !== 'pro') return 'free';
-
-  const sub = await getActiveSubscription(userId);
+  const sub = await getProSubscription(userId);
   if (!sub) return 'free';
-
-  // Active paid sub stays pro forever (until canceled). A trialing sub only
-  // stays pro while the trial window is open.
   if (sub.status === 'active') return 'pro';
-  if (sub.status === 'trialing') {
-    const live = sub.trial_ends_at && new Date(sub.trial_ends_at).getTime() > Date.now();
-    if (live) return 'pro';
-    // Trial lapsed — demote the user row so future calls skip this check.
-    await identityRepository.setRole(userId, 'free');
-    return 'free';
+  if (sub.status === 'trialing' || sub.status === 'created' || sub.status === 'authenticated') {
+    // Pre-active states: treat as pro only while the trial window is open.
+    const trialEnd = sub.trialEnd ? new Date(sub.trialEnd).getTime() : 0;
+    return trialEnd > Date.now() ? 'pro' : 'free';
   }
   return 'free';
+}
+
+/** Trial end timestamp (ISO) if the user is in a pro trial, else null. */
+export async function trialUntilForUser(userId: string): Promise<string | null> {
+  const sub = await getProSubscription(userId);
+  if (!sub || !sub.trialEnd) return null;
+  if (['trialing', 'created', 'authenticated'].includes(sub.status)) {
+    return new Date(sub.trialEnd).toISOString();
+  }
+  return null;
 }
 
 export async function currentUser(ctx: APIContext): Promise<AuthUser | null> {

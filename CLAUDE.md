@@ -25,11 +25,11 @@ The backend is **feature-sliced** under `src/server/`:
 - `src/server/db` — postgres.js pool over **Neon Postgres** (`DATABASE_URL`; `?` placeholders → `$n`).
   `ensureInit()` runs BetterAuth's programmatic migration for auth tables + `create table if not exists`
   for each feature's tables.
-- `src/server/features/identity` — BetterAuth instance (`auth.ts`), programmatic migration
-  (`migrate.ts`), user/role repository, and the auth gates (`withUser` / `withPro` in `service.ts`).
-  Plugins: `jwt` (signed session cookie), `apiKey` (`x-api-key` header, `ti_` prefix). Custom
-  `user.role` column (`free` | `pro`).
-- `src/server/features/billing` — `subscriptions` table + grantTrial / grantPro / cancelPro.
+- `src/server/features/identity` — BetterAuth instance (`auth.ts`, lazily constructed), programmatic
+  migration (`migrate.ts`), and the auth gates (`withUser` / `withPro` in `service.ts`). Plugins:
+  `jwt` (signed session cookie), `apiKey` (`x-api-key` header, `ti_` prefix), and
+  `razorpay` (better-auth-razorpay — owns the entire subscription lifecycle). No `role` column —
+  roles are derived from the razorpay plugin's `subscription` table.
 - `src/server/features/reports` — folders + reports tables, repository, service.
 - `src/server/features/outreach` — templates/campaigns/prospects/emails/received tables,
   repository, service.
@@ -45,18 +45,22 @@ One **Neon Postgres** database for both local and prod, via `DATABASE_URL` (no l
 See `NEON.md`. Missing `DATABASE_URL` throws a clear error. Per-user isolation is enforced in
 the query layer (every query filters by the `user_id` resolved from the session / API key).
 
-BetterAuth owns the auth tables (`user`, `session`, `account`, `verification`, and the apiKey
-plugin's `apikey` table); feature tables are code-defined in each `features/<feature>/model.ts`.
+BetterAuth owns the auth tables (`user`, `session`, `account`, `verification`, the apiKey
+plugin's `apikey` table, and the razorpay plugin's `subscription` table + `razorpayCustomerId`
+column on `user`); feature tables are code-defined in each `features/<feature>/model.ts`.
 
 ## Auth
 
-- **Two roles:** `free` and `pro`. `role` lives on the BetterAuth `user` row.
+- **Two roles:** `free` and `pro`. NOT stored on the user — derived from the razorpay plugin's
+  `subscription` table by `roleForUser()` (`active` or within-trial → `pro`, else `free`).
 - **Sessions:** BetterAuth cookie carrying a signed JWT (`jwt` plugin). Read via
   `auth.api.getSession({ headers })`.
 - **API keys** (MCP server): `x-api-key: ti_…` header (apiKey plugin). Same `getSession` call
   resolves both credential types.
-- **Trial:** new signups get a 3-day `pro` trial (server-side `user.create.after` hook). Lazy
-  expiry: `roleForUser()` demotes `pro` → `free` when the trial lapses with no active paid sub.
+- **Trials + billing:** owned entirely by `better-auth-razorpay` (subscription table, webhook,
+  plan-based billing, free trials as Razorpay-deferred first charge). No manual lifecycle code.
+  The plugin is always registered; `ensureRazorpayConfigured()` throws on first request if
+  `RAZORPAY_*` env vars are missing.
 - No social/OAuth yet.
 
 ## Conventions

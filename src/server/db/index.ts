@@ -4,9 +4,10 @@
 //   - BetterAuth (via getKysely())
 //
 // `ensureInit()` runs once per process to (a) run BetterAuth's programmatic
-// migrations for the auth tables, and (b) `create table if not exists` the
-// feature tables. It wipes the legacy auth tables first so the move to
-// BetterAuth starts from a clean schema (per the migration decision).
+// migrations for the auth + razorpay plugin tables, and (b) `create table if
+// not exists` the feature tables. It wipes the legacy auth + billing tables
+// first so the move to BetterAuth + better-auth-razorpay starts from a clean
+// schema.
 
 import type { Database } from './database';
 import { PostgresDatabase } from './database';
@@ -37,8 +38,9 @@ export function getDb(): Database {
 }
 
 /**
- * A Kysely instance bound to the same Neon pool. BetterAuth uses this to own
- * its auth tables (user/session/account/verification/key). We keep one pooled
+ * A Kysely instance bound to the same Neon pool. BetterAuth (and its plugins)
+ * uses this to own its tables (user/session/account/verification/key +
+ * razorpay's subscription + user.razorpayCustomerId). We keep one pooled
  * postgres.js connection shared with the repositories rather than opening a
  * second pool.
  */
@@ -62,28 +64,34 @@ let initialized: Promise<void> | null = null;
 /**
  * Create all tables once per process. Endpoints await this first.
  *
- * Auth tables are owned and migrated by BetterAuth (see features/identity).
- * Feature tables (subscriptions, folders, reports, outreach) are created here
- * by each feature's `createTables()` export.
+ * Auth + billing tables are owned and migrated by BetterAuth and the
+ * razorpay plugin (see features/identity/migrate.ts). Feature tables
+ * (folders, reports, outreach) are created here by each feature's
+ * `createTables()` export.
  */
 export function ensureInit(): Promise<void> {
   if (!initialized) {
     initialized = (async () => {
-      // Legacy auth tables from the pre-BetterAuth era. Drop them so the
-      // schema starts clean (existing users / API keys are not migrated).
+      // Legacy tables from the pre-BetterAuth / pre-razorpay-plugin era.
+      // Drop them so the schema starts clean (existing users / API keys /
+      // subscriptions are not migrated — they re-signup).
       const d = getDb();
       await d.execute('drop table if exists api_keys');
       await d.execute('drop table if exists users');
+      await d.execute('drop table if exists subscriptions');
 
-      // Auth tables: BetterAuth's programmatic migration owns these.
-      const { initAuthSchema } = await import('../features/identity/migrate');
+      // Auth + subscription tables: BetterAuth's programmatic migration owns
+      // these (includes the razorpay plugin's `subscription` table and the
+      // `razorpayCustomerId` column on `user`). ensureRazorpayConfigured()
+      // throws a clear error if keys are missing — fires on first real
+      // request, not at build time.
+      const { initAuthSchema, ensureRazorpayConfigured } = await import('../features/identity/migrate');
+      ensureRazorpayConfigured();
       await initAuthSchema();
 
       // Feature tables: each feature declares its own.
-      const { createTables: billing } = await import('../features/billing/model');
       const { createTables: reports } = await import('../features/reports/model');
       const { createTables: outreach } = await import('../features/outreach/model');
-      await billing(d);
       await reports(d);
       await outreach(d);
     })();

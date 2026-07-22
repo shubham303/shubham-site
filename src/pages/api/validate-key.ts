@@ -11,8 +11,7 @@ import type { APIRoute } from 'astro';
 import { ensureInit } from '@server/db';
 import { json } from '@server/lib/http';
 import { userIdForApiKey } from '@server/features/identity/apiKeyService';
-import { roleForUser } from '@server/features/identity/service';
-import { getActiveSubscription } from '@server/features/billing/service';
+import { roleForUser, trialUntilForUser } from '@server/features/identity/service';
 
 export const prerender = false;
 
@@ -29,10 +28,8 @@ export const POST: APIRoute = async ({ request }) => {
     const userId = await userIdForApiKey(apiKey);
     if (!userId) return json({ role: 'free', trial_until: null });
     const role = await roleForUser(userId);
-    const sub = await getActiveSubscription(userId);
-    const trialUntil =
-      sub?.status === 'trialing' && sub.trial_ends_at ? sub.trial_ends_at : null;
-    return json({ role, trial_until: trialUntil });
+    const trial_until = role === 'pro' ? await trialUntilForUser(userId) : null;
+    return json({ role, trial_until });
   } catch {
     return json({ role: 'free', trial_until: null });
   }
