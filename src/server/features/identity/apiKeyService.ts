@@ -10,15 +10,18 @@ import { auth } from './auth';
 export const MAX_KEYS = 5;
 
 export async function listApiKeys(request: Request) {
+  // @better-auth/api-key returns { apiKeys: [...], total, limit, offset }.
+  // Items use `referenceId` (owner) and `lastRequest` (last-used); there is no
+  // `userId`/`lastUsedAt` field on list items.
   const res = (await auth.api.listApiKeys({ headers: request.headers })) as {
-    keys: Array<{ id: string; name: string | null; start: string | null; createdAt: Date; lastUsedAt: Date | null }>;
+    apiKeys: Array<{ id: string; name: string | null; start: string | null; createdAt: Date; lastRequest: Date | null }>;
   };
-  return (res.keys ?? []).map((k) => ({
+  return (res.apiKeys ?? []).map((k) => ({
     id: k.id,
     name: k.name,
     key_prefix: k.start ? `${k.start}…` : null,
     created_at: k.createdAt instanceof Date ? k.createdAt.toISOString() : String(k.createdAt),
-    last_used_at: k.lastUsedAt instanceof Date ? k.lastUsedAt.toISOString() : (k.lastUsedAt ?? null),
+    last_used_at: k.lastRequest instanceof Date ? k.lastRequest.toISOString() : (k.lastRequest ?? null),
   }));
 }
 
@@ -30,12 +33,13 @@ export async function mintApiKey(request: Request, name?: string) {
   const existing = await listApiKeys(request);
   if (existing.length >= MAX_KEYS) throw new Error('key_limit_reached');
 
+  // @better-auth/api-key returns a FLAT object: { ...apiKey, key (raw), start, id, ... }
   const res = (await auth.api.createApiKey({
     headers: request.headers,
     body: { name: name?.trim() || 'default' },
-  })) as { key: string; apiKey: { id: string; start: string | null } };
+  })) as { key: string; start: string | null; id: string };
 
-  return { apiKey: res.key, prefix: res.apiKey.start };
+  return { apiKey: res.key, prefix: res.start };
 }
 
 export async function revokeApiKey(request: Request, id: string) {
@@ -53,11 +57,13 @@ export async function revokeApiKey(request: Request, id: string) {
  */
 export async function userIdForApiKey(rawKey: string): Promise<string | null> {
   try {
+    // verifyApiKey returns { valid, key: { referenceId, ... } | null }. For
+    // user-scoped keys `referenceId` IS the owning user id.
     const res = (await auth.api.verifyApiKey({
       body: { key: rawKey },
-    })) as { valid: boolean; key?: { userId?: string }; session?: { user?: { id?: string } } | null };
+    })) as { valid: boolean; key?: { referenceId?: string } | null };
     if (!res?.valid) return null;
-    return res.key?.userId ?? res.session?.user?.id ?? null;
+    return res.key?.referenceId ?? null;
   } catch {
     return null;
   }
