@@ -15,8 +15,9 @@ This repo is the **web platform half** of Table Intelligence. The other half is 
    **dashboard-relevant data and agent outputs** (saved reports; outreach templates, campaigns,
    prospects, drafted/sent emails, received emails) — never the user's raw dataset.
 
-The **same APIs** are consumed by both the MCP server (auth: `TABINT_API_KEY` Bearer key) and this
-site's **web frontend** (auth: login session cookie), so both read/write the same records.
+The **same APIs** are consumed by both the MCP server (auth: `TABINT_API_KEY` in the `x-api-key`
+header) and this site's **web frontend** (auth: BetterAuth session cookie carrying a signed JWT),
+so both read/write the same records.
 
 ## Layout
 

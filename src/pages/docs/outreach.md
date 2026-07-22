@@ -10,7 +10,7 @@ prospects and drafts a personalised email for each, stores them on your account,
 review and edit everything before you send. Table Intelligence stores and organises the data — it
 does **not** send email. Sending happens in your agent through your own email tool (Gmail, SMTP…).
 
-> Outreach is a **premium connector**. Start a trial or upgrade on [pricing](/pricing).
+> Outreach is a **Pro connector**. Start a trial or upgrade on [pricing](/pricing).
 
 ## The model
 

@@ -32,7 +32,7 @@ that seriously; it's the honest result.
 > "Generate a report of these findings and save it to a folder called Q3."
 
 The agent composes a markdown report (findings **plus** their trust and caveats) and saves it to
-your account. Saving needs an active trial or premium.
+your account. Saving needs an active trial or pro.
 
 ## 4. Read it on the web
 
