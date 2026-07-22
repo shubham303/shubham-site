@@ -1,17 +1,14 @@
 import type { APIRoute } from 'astro';
-import { ensureInit } from '@server/db/factory';
-import { shareReport } from '@server/services/reportService';
-import { json, userFromRequest } from '@server/lib/http';
+import { withUser, json } from '@server/features/identity/service';
+import { shareReport } from '@server/features/reports/service';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies, params }) => {
-  await ensureInit();
-  const userId = await userFromRequest(request, cookies);
-  if (!userId) return json({ error: 'not_authenticated' }, 401);
-  const body = await request.json().catch(() => ({}));
-  const share = body.share === undefined ? true : Boolean(body.share);
-  const res = await shareReport(userId, String(params.id), share);
-  if (!res) return json({ error: 'not_found' }, 404);
-  return json({ ok: true, ...res });
-};
+export const POST: APIRoute = (ctx) =>
+  withUser(ctx, async (u) => {
+    const body = await ctx.request.json().catch(() => ({}));
+    const share = body.share === undefined ? true : Boolean(body.share);
+    const res = await shareReport(u.id, String(ctx.params.id), share);
+    if (!res) return json({ error: 'not_found' }, 404);
+    return json({ ok: true, ...res });
+  });

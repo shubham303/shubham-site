@@ -1,23 +1,16 @@
 import type { APIRoute } from 'astro';
-import { ensureInit } from '@server/db/factory';
-import { listFolders, createFolder } from '@server/services/reportService';
-import { json, userFromRequest } from '@server/lib/http';
+import { withUser, json } from '@server/features/identity/service';
+import { listFolders, createFolder } from '@server/features/reports/service';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, cookies }) => {
-  await ensureInit();
-  const userId = await userFromRequest(request, cookies);
-  if (!userId) return json({ error: 'not_authenticated' }, 401);
-  return json({ folders: await listFolders(userId) });
-};
+export const GET: APIRoute = (ctx) =>
+  withUser(ctx, async (u) => json({ folders: await listFolders(u.id) }));
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  await ensureInit();
-  const userId = await userFromRequest(request, cookies);
-  if (!userId) return json({ error: 'not_authenticated' }, 401);
-  const body = await request.json().catch(() => ({}));
-  const name = String(body.name || '').trim();
-  if (!name) return json({ error: 'name required' }, 400);
-  return json({ ok: true, ...(await createFolder(userId, name)) });
-};
+export const POST: APIRoute = (ctx) =>
+  withUser(ctx, async (u) => {
+    const body = await ctx.request.json().catch(() => ({}));
+    const name = String(body.name || '').trim();
+    if (!name) return json({ error: 'name required' }, 400);
+    return json({ ok: true, ...(await createFolder(u.id, name)) });
+  });

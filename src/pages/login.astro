@@ -35,13 +35,15 @@ export const prerender = false;
       btn.disabled = true; btn.textContent = 'Logging in…';
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const r = await fetch('/api/auth/login', {
+      // BetterAuth sign-in endpoint (served by /api/auth/[...all]). The cookie
+      // is set automatically on success.
+      const r = await fetch('/api/auth/sign-in/email', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        document.getElementById('msg').textContent = d.error || 'Login failed.';
+        document.getElementById('msg').textContent = d?.message || d?.error || 'Login failed.';
         btn.disabled = false; btn.textContent = 'Log in';
         return;
       }

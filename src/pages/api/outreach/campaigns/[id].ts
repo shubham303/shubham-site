@@ -1,12 +1,11 @@
 import type { APIRoute } from 'astro';
-import { withUser } from '@server/lib/api';
-import { json } from '@server/lib/http';
-import { getCampaign } from '@server/services/outreachService';
+import { withUser, json } from '@server/features/identity/service';
+import { getCampaign } from '@server/features/outreach/service';
 
 export const prerender = false;
 
 export const GET: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => {
-    const c = await getCampaign(uid, String(ctx.params.id));
+  withUser(ctx, async (u) => {
+    const c = await getCampaign(u.id, String(ctx.params.id));
     return c ? json({ campaign: c }) : json({ error: 'not_found' }, 404);
   });

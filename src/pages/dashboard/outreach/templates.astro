@@ -1,19 +1,17 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import { ensureInit, getProvider } from '@server/db/factory';
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
-import { tierForUser } from '@server/services/entitlementService';
-import { listTemplates } from '@server/services/outreachService';
+import { ensureInit } from '@server/db';
+import { roleForUser } from '@server/features/identity/service';
+import { listTemplates } from '@server/features/outreach/service';
 
 export const prerender = false;
 await ensureInit();
-const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
-if (!uid) return Astro.redirect('/login');
-const user = await getProvider().users.getById(uid);
-const tier = await tierForUser(uid);
-const templates = await listTemplates(uid);
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+const role = await roleForUser(user.id);
+const templates = await listTemplates(user.id);
 ---
-<DashboardLayout active="templates" email={user?.email} tier={tier} title="Templates — Table Intelligence">
+<DashboardLayout active="templates" email={user.email} role={role} title="Templates — Table Intelligence">
   <div class="head"><h1>Outreach templates</h1><span class="count">{templates.length}</span>
     <button class="btn-primary ml" id="new-btn">New template</button></div>
   <p class="muted">Reusable playbooks. Each defines who to target and how to research &amp; write.

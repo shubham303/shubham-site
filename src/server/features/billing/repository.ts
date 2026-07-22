@@ -1,6 +1,7 @@
-import type { Database } from '../db/database';
-
 // status: 'trialing' | 'active' | 'canceled'
+import type { Database } from '../../db/database';
+import { getDb } from '../../db';
+
 export interface SubscriptionRow {
   id: string;
   user_id: string;
@@ -14,23 +15,7 @@ export interface SubscriptionRow {
 }
 
 export class SubscriptionsRepository {
-  constructor(private db: Database) {}
-
-  async createTable(): Promise<void> {
-    await this.db.execute(
-      `create table if not exists subscriptions (
-        id varchar primary key,
-        user_id varchar unique not null,
-        status varchar not null,
-        plan varchar,
-        trial_ends_at varchar,
-        current_period_end varchar,
-        razorpay_subscription_id varchar,
-        created_at varchar not null,
-        updated_at varchar not null
-      )`,
-    );
-  }
+  constructor(private db: Database = getDb()) {}
 
   async getByUser(userId: string): Promise<SubscriptionRow | null> {
     const rows = await this.db.execute(
@@ -69,3 +54,5 @@ export class SubscriptionsRepository {
     );
   }
 }
+
+export const subscriptionsRepository = new SubscriptionsRepository();

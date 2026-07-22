@@ -1,15 +1,14 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import { ensureInit } from '@server/db/factory';
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
-import { getReport } from '@server/services/reportService';
+import { ensureInit } from '@server/db';
+import { getReport } from '@server/features/reports/service';
 
 export const prerender = false;
 
 await ensureInit();
-const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
-if (!uid) return Astro.redirect('/login');
-const report = await getReport(uid, String(Astro.params.id));
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+const report = await getReport(user.id, String(Astro.params.id));
 if (!report) return new Response('Report not found', { status: 404 });
 ---
 <Layout title={report.title}>

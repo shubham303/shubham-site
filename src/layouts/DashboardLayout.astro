@@ -1,7 +1,7 @@
 ---
 import Landing from './Landing.astro';
-interface Props { active: string; email?: string | null; tier: string; title?: string }
-const { active, email, tier, title } = Astro.props;
+interface Props { active: string; email?: string | null; role: string; title?: string }
+const { active, email, role, title } = Astro.props;
 
 const nav = [
   { group: 'Data Analysis', items: [
@@ -31,9 +31,9 @@ const nav = [
       <div class="side-foot">
         <div class="side-acct">
           <span class="side-email">{email}</span>
-          <span class={`plan plan-${tier}`}>{tier}</span>
+          <span class={`plan plan-${role}`}>{role}</span>
         </div>
-        {tier !== 'paid' && <a href="/pricing" class="side-up">Upgrade to premium</a>}
+        {role !== 'pro' && <a href="/pricing" class="side-up">Upgrade to pro</a>}
         <div class="side-links">
           <a href="/dashboard/account" class={active === 'account' ? 'on' : ''}>Account &amp; API key</a>
           <a href="#" id="side-logout">Log out</a>
@@ -45,7 +45,9 @@ const nav = [
 
   <script is:inline>
     document.getElementById('side-logout')?.addEventListener('click', async (e) => {
-      e.preventDefault(); await fetch('/api/auth/logout', { method: 'POST' }); location.href = '/login';
+      e.preventDefault();
+      await fetch('/api/auth/sign-out', { method: 'POST' });
+      location.href = '/login';
     });
   </script>
 
@@ -66,7 +68,7 @@ const nav = [
     .side-acct { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .side-email { color: var(--muted); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; }
     .plan { text-transform: uppercase; font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
-    .plan.plan-trial, .plan.plan-paid { color: var(--accent); border-color: var(--accent); }
+    .plan.plan-pro { color: var(--accent); border-color: var(--accent); }
     .side-up { font-size: 0.82rem; font-weight: 600; }
     .side-links { display: flex; flex-direction: column; gap: 0.3rem; }
     .side-links a { color: var(--muted); }

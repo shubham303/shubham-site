@@ -1,24 +1,20 @@
 import type { APIRoute } from 'astro';
-import { ensureInit } from '@server/db/factory';
-import { grantPremium, razorpayConfigured } from '@server/services/billingService';
-import { json, userFromRequest } from '@server/lib/http';
+import { withUser, json } from '@server/features/identity/service';
+import { grantPro, razorpayConfigured } from '@server/features/billing/service';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  await ensureInit();
-  const userId = await userFromRequest(request, cookies);
-  if (!userId) return json({ error: 'not_authenticated' }, 401);
-
-  if (razorpayConfigured()) {
-    // Razorpay keys present but checkout is wired only once you provide the plan
-    // ID + test keys (steps_for_shubham.md). Until then use the dev path below.
-    return json(
-      { error: 'razorpay_not_wired', message: 'Razorpay keys detected; wire the plan/checkout per steps_for_shubham.md.' },
-      501,
-    );
-  }
-  // Local/dev: simulate a successful premium purchase so the loop runs e2e.
-  await grantPremium(userId);
-  return json({ ok: true, granted: true, dev: true });
-};
+export const POST: APIRoute = (ctx) =>
+  withUser(ctx, async (u) => {
+    if (razorpayConfigured()) {
+      // Razorpay keys present but checkout is wired only once you provide the
+      // plan ID + test keys. Until then use the dev path below.
+      return json(
+        { error: 'razorpay_not_wired', message: 'Razorpay keys detected; wire the plan/checkout per RUNBOOK.' },
+        501,
+      );
+    }
+    // Local/dev: simulate a successful pro purchase so the loop runs e2e.
+    await grantPro(u.id);
+    return json({ ok: true, granted: true, dev: true });
+  });

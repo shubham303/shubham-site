@@ -1,29 +1,27 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import { ensureInit, getProvider } from '@server/db/factory';
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
-import { tierForUser } from '@server/services/entitlementService';
-import { listApiKeys } from '@server/services/apiKeyService';
+import { ensureInit } from '@server/db';
+import { roleForUser } from '@server/features/identity/service';
+import { listApiKeys } from '@server/features/identity/apiKeyService';
 
 export const prerender = false;
 await ensureInit();
-const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
-if (!uid) return Astro.redirect('/login');
-const user = await getProvider().users.getById(uid);
-const tier = await tierForUser(uid);
-const keys = await listApiKeys(uid);
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+const role = await roleForUser(user.id);
+const keys = await listApiKeys(Astro.request);
 const welcome = Astro.url.searchParams.get('welcome') === '1';
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
-<DashboardLayout active="account" email={user?.email} tier={tier} title="Account — Table Intelligence">
+<DashboardLayout active="account" email={user.email} role={role} title="Account — Table Intelligence">
   <h1>Account</h1>
-  <p class="muted">{user?.email} · plan <strong>{tier}</strong>
-    {tier !== 'paid' && <> · <a href="/pricing">Upgrade</a></>}</p>
+  <p class="muted">{user.email} · plan <strong>{role}</strong>
+    {role !== 'pro' && <> · <a href="/pricing">Upgrade</a></>}</p>
 
   {welcome && (
     <div class="welcome">
       <p class="welcome-h">👋 Welcome to Table Intelligence!</p>
-      <p class="muted">You're on a {tier} plan. To connect the MCP server to your AI agent,
+      <p class="muted">You're on the {role} plan. To connect the MCP server to your AI agent,
         generate your first API key below, then follow the <a href="/docs/install">install guide</a>.</p>
     </div>
   )}

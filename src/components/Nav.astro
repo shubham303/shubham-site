@@ -1,6 +1,6 @@
 ---
 // Shared top navigation for the marketing/content tabs.
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
+// Auth state comes from the middleware (Astro.locals.user).
 interface Props { active?: string }
 const { active } = Astro.props;
 const tabs = [
@@ -10,9 +10,7 @@ const tabs = [
   { label: 'Docs', href: '/docs' },
   { label: 'Pricing', href: '/pricing' },
 ];
-// Auth-aware: on SSR-rendered pages we know whether the visitor is logged in
-// and can offer Dashboard / Account instead of Sign in / Start free.
-const loggedIn = !!verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
+const loggedIn = !!Astro.locals.user;
 ---
 <header class="ti-nav">
   <div class="ti-nav-row">

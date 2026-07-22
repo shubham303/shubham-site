@@ -1,17 +1,19 @@
+// MCP API key management (browser session only). The actual key records live
+// in BetterAuth's apiKey-plugin table; these endpoints wrap the plugin API.
+
 import type { APIRoute } from 'astro';
-import { withUser, readBody, fail } from '@server/lib/api';
-import { json } from '@server/lib/http';
-import { listApiKeys, mintApiKey } from '@server/services/apiKeyService';
+import { json, withUser, readBody, fail } from '@server/features/identity/service';
+import { listApiKeys, mintApiKey } from '@server/features/identity/apiKeyService';
 
 export const prerender = false;
 
 export const GET: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => json({ keys: await listApiKeys(uid) }));
+  withUser(ctx, async () => json({ keys: await listApiKeys(ctx.request) }));
 
 export const POST: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => {
+  withUser(ctx, async () => {
     const body = await readBody(ctx);
     try {
-      return json({ ok: true, ...(await mintApiKey(uid, body.name)) });
+      return json({ ok: true, ...(await mintApiKey(ctx.request, body.name)) });
     } catch (e) { return fail(e); }
   });

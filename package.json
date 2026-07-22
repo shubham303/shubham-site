@@ -11,7 +11,10 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.3.0",
     "@astrojs/vercel": "^8.2.11",
+    "@better-auth/api-key": "^1.6.23",
     "astro": "^5.6.0",
+    "better-auth": "^1.6.23",
+    "kysely": "^0.29.4",
     "postgres": "^3.4.9"
   }
 }
