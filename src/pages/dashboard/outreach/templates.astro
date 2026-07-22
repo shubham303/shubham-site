@@ -12,6 +12,7 @@ const role = await roleForUser(user.id);
 const templates = await listTemplates(user.id);
 ---
 <DashboardLayout active="templates" email={user.email} role={role} title="Templates — Table Intelligence">
+  <script src="/js/md.js" defer></script>
   <div class="head"><h1>Outreach templates</h1><span class="count">{templates.length}</span>
     <button class="btn-primary ml" id="new-btn">New template</button></div>
   <p class="muted">Reusable playbooks. Each defines who to target and how to research &amp; write.
@@ -23,12 +24,12 @@ const templates = await listTemplates(user.id);
   ) : (
     <div class="grid">
       {templates.map((t) => (
-        <div class="tcard" data-id={t.id}>
+        <div class="tcard" data-id={t.id} data-prompt={t.prompt || ''}>
           <div class="tcard-top">
             <span class="tcard-title">{t.title}</span>
             <span class={`badge badge-${t.status}`}>{t.status}</span>
           </div>
-          <p class="tcard-prompt">{(t.prompt || '').slice(0, 130)}{(t.prompt || '').length > 130 ? '…' : ''}</p>
+          <p class="tcard-prompt"></p>
           <div class="tcard-actions">
             <button class="btn-ghost sm edit-btn" data-id={t.id}>Edit</button>
             <button class="btn-primary sm run-btn" data-id={t.id} data-title={t.title}>Start campaign</button>
@@ -38,36 +39,59 @@ const templates = await listTemplates(user.id);
     </div>
   )}
 
-  <!-- drawer (create/edit) -->
-  <div class="drawer" id="tdrawer" aria-hidden="true">
-    <div class="drawer-backdrop" data-close></div>
-    <aside class="drawer-panel">
-      <header class="drawer-head"><h3 id="td-title">New template</h3><button class="drawer-x" data-close>✕</button></header>
-      <div class="drawer-body">
-        <label>Title<input id="td-name" placeholder="e.g. SaaS founders — data audit" /></label>
-        <label>Status
-          <select id="td-status"><option value="active">active</option><option value="inactive">inactive</option></select>
-        </label>
-        <label>Prompt (playbook)
-          <textarea id="td-prompt" rows="16" placeholder="Who to target, how to research them, and how to write the email…"></textarea></label>
+  <!-- full-screen split editor (create/edit) -->
+  <div class="fsedit" id="fsedit" aria-hidden="true">
+    <header class="fsedit-head">
+      <div class="fsedit-meta">
+        <input id="td-name" class="fsedit-title" placeholder="Template title — e.g. SaaS founders — data audit" />
+        <select id="td-status" class="fsedit-status"><option value="active">active</option><option value="inactive">inactive</option></select>
       </div>
-      <footer class="drawer-foot"><span id="td-msg" class="muted sm"></span>
-        <div class="foot-btns"><button class="btn-ghost" id="td-del" style="display:none">Delete</button>
-          <button class="btn-ghost" data-close>Cancel</button><button class="btn-primary" id="td-save">Save</button></div></footer>
-    </aside>
+      <button class="drawer-x" data-close title="Close">✕</button>
+    </header>
+    <div class="fsedit-tabs"><button class="fsedit-tab active" data-tab="write">Write</button><button class="fsedit-tab" data-tab="preview">Preview</button></div>
+    <div class="fsedit-body">
+      <div class="fsedit-pane fsedit-write">
+        <textarea id="td-prompt" placeholder="# Campaign goal&#10;Who to target, how to research them, and how to write the email…&#10;&#10;**Tip:** use Markdown — headings, **bold**, lists, and [links](https://example.com)."></textarea>
+      </div>
+      <div class="fsedit-pane fsedit-preview md-content" id="td-preview"></div>
+    </div>
+    <footer class="fsedit-foot"><span id="td-msg" class="muted sm"></span>
+      <div class="foot-btns"><button class="btn-ghost danger" id="td-del" style="display:none">Delete</button>
+        <button class="btn-ghost" data-close>Cancel</button><button class="btn-primary" id="td-save">Save</button></div></footer>
   </div>
 
   <script is:inline define:vars={{ templates }}>
     const T = Object.fromEntries(templates.map((t) => [t.id, t]));
     const $ = (id) => document.getElementById(id);
-    const dr = $('tdrawer');
-    const open = () => { dr.classList.add('open'); dr.setAttribute('aria-hidden','false'); };
-    const close = () => { dr.classList.remove('open'); dr.setAttribute('aria-hidden','true'); };
+    const dr = $('fsedit');
+    const open = () => { dr.classList.add('open'); dr.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; };
+    const close = () => { dr.classList.remove('open'); dr.setAttribute('aria-hidden','true'); document.body.style.overflow=''; };
     dr.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dr.classList.contains('open')) close(); });
 
-    function openNew() { dr.dataset.id=''; $('td-title').textContent='New template'; $('td-name').value=''; $('td-prompt').value=''; $('td-status').value='active'; $('td-del').style.display='none'; $('td-msg').textContent=''; open(); }
-    function openEdit(id) { const t=T[id]; if(!t) return; dr.dataset.id=id; $('td-title').textContent='Edit template'; $('td-name').value=t.title||''; $('td-prompt').value=t.prompt||''; $('td-status').value=t.status||'active'; $('td-del').style.display=''; $('td-msg').textContent=''; open(); }
+    // live markdown preview — rendered into #td-preview on every keystroke
+    const renderPreview = () => { $('td-preview').innerHTML = window.md($('td-prompt').value); };
+    $('td-prompt').addEventListener('input', renderPreview);
+
+    // Write / Preview tab toggle (used on narrow screens where panes stack)
+    dr.querySelectorAll('.fsedit-tab').forEach((tab) => tab.addEventListener('click', () => {
+      dr.querySelectorAll('.fsedit-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      dr.dataset.tab = tab.dataset.tab;
+      if (tab.dataset.tab === 'preview') renderPreview();
+    }));
+
+    function openNew() { dr.dataset.id=''; $('td-name').value=''; $('td-prompt').value=''; $('td-status').value='active'; $('td-del').style.display='none'; $('td-msg').textContent=''; setTab('write'); renderPreview(); open(); }
+    function openEdit(id) { const t=T[id]; if(!t) return; dr.dataset.id=id; $('td-name').value=t.title||''; $('td-prompt').value=t.prompt||''; $('td-status').value=t.status||'active'; $('td-del').style.display=''; $('td-msg').textContent=''; setTab('write'); renderPreview(); open(); }
+    function setTab(name) { dr.dataset.tab = name; dr.querySelectorAll('.fsedit-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name)); }
+
+    // render card excerpts as clean text (markdown stripped)
+    document.querySelectorAll('.tcard').forEach((c) => {
+      const raw = c.dataset.prompt || '';
+      const stripped = window.stripMd ? window.stripMd(raw) : raw;
+      c.querySelector('.tcard-prompt').textContent = stripped.length > 130 ? stripped.slice(0, 130) + '…' : (stripped || '(no prompt)');
+    });
+
     $('new-btn').addEventListener('click', openNew);
     document.querySelectorAll('.edit-btn').forEach((b)=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
     document.querySelectorAll('.tcard').forEach((c)=>c.addEventListener('click',(e)=>{ if(!e.target.closest('button')) openEdit(c.dataset.id); }));
@@ -117,21 +141,58 @@ const templates = await listTemplates(user.id);
     .btn-ghost { padding:0.5rem 1rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); border-radius:8px; cursor:pointer; }
     .btn-ghost:hover { border-color:var(--accent); }
 
-    .drawer { position:fixed; inset:0; z-index:50; visibility:hidden; }
-    .drawer.open { visibility:visible; }
-    .drawer-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.35); opacity:0; transition:opacity .2s; }
-    .drawer.open .drawer-backdrop { opacity:1; }
-    .drawer-panel { position:absolute; top:0; right:0; height:100%; width:min(560px,100%); background:var(--bg); border-left:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .25s ease; box-shadow:-8px 0 24px rgba(0,0,0,.12); }
-    .drawer.open .drawer-panel { transform:translateX(0); }
-    .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:1.2rem 1.4rem; border-bottom:1px solid var(--border); }
-    .drawer-head h3 { margin:0; font-size:1.15rem; }
-    .drawer-x { border:none; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
-    .drawer-body { padding:1.2rem 1.4rem; overflow-y:auto; flex:1; display:grid; gap:1rem; }
-    .drawer-body label { display:grid; gap:0.3rem; font-size:0.8rem; font-weight:600; color:var(--muted); }
-    .drawer-body input, .drawer-body select, .drawer-body textarea { font:inherit; font-weight:400; color:var(--fg); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.55rem 0.65rem; width:100%; }
-    .drawer-body textarea { resize:vertical; line-height:1.5; }
-    .drawer-body input:focus, .drawer-body select:focus, .drawer-body textarea:focus { outline:none; border-color:var(--accent); }
-    .drawer-foot { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.4rem; border-top:1px solid var(--border); }
+    .drawer-x { border:none; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:0.3rem 0.5rem; border-radius:6px; }
+    .drawer-x:hover { color:var(--fg); background:var(--bg-soft); }
     .foot-btns { display:flex; gap:0.6rem; }
+
+    /* ---- full-screen split editor ---- */
+    .fsedit { position:fixed; inset:0; z-index:60; visibility:hidden; background:var(--bg); display:flex; flex-direction:column; }
+    .fsedit.open { visibility:visible; }
+    .fsedit-head { display:flex; align-items:center; gap:1rem; padding:0.9rem 1.4rem; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .fsedit-meta { display:flex; align-items:center; gap:0.8rem; flex:1; min-width:240px; flex-wrap:wrap; }
+    .fsedit-title { font:inherit; font-size:1.05rem; font-weight:600; color:var(--fg); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.7rem; flex:1; min-width:200px; }
+    .fsedit-title:focus { outline:none; border-color:var(--accent); }
+    .fsedit-status { font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.7rem; cursor:pointer; }
+    .fsedit-tabs { display:none; border-bottom:1px solid var(--border); padding:0 1.4rem; gap:0.2rem; }
+    .fsedit-tab { border:none; background:none; color:var(--muted); font:inherit; font-weight:600; padding:0.6rem 0.9rem; cursor:pointer; border-bottom:2px solid transparent; }
+    .fsedit-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .fsedit-body { flex:1; display:flex; min-height:0; overflow:hidden; }
+    .fsedit-pane { flex:1; min-width:0; overflow:auto; }
+    .fsedit-write { display:flex; }
+    .fsedit-write textarea { flex:1; border:none; border-right:1px solid var(--border); resize:none; padding:1.4rem; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:0.92rem; line-height:1.65; color:var(--fg); background:var(--bg); outline:none; min-height:0; }
+    .fsedit-preview { padding:1.4rem 1.6rem; background:var(--bg); }
+    .fsedit-foot { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.9rem 1.4rem; border-top:1px solid var(--border); }
+    .btn-ghost.danger:hover { border-color:#cf222e; color:#cf222e; }
+
+    /* On narrow screens, stack Write/Preview and switch via tabs. */
+    @media (max-width: 820px) {
+      .fsedit-tabs { display:flex; }
+      .fsedit-write { border-right:none; }
+      .fsedit-write textarea { border-right:none; }
+      .fsedit-body { flex-direction:column; }
+      .fsedit-pane { flex:none; height:100%; }
+      .fsedit[data-tab='write'] .fsedit-preview { display:none; }
+      .fsedit[data-tab='preview'] .fsedit-write { display:none; }
+    }
+
+    /* ---- rendered markdown content (preview + frozen-prompt views) ---- */
+    .md-content { font-size:0.95rem; line-height:1.65; color:var(--fg); word-wrap:break-word; }
+    .md-content > :first-child { margin-top:0; }
+    .md-content > :last-child { margin-bottom:0; }
+    .md-content h1, .md-content h2, .md-content h3, .md-content h4 { margin:1.4em 0 0.5em; line-height:1.3; font-weight:650; }
+    .md-content h1 { font-size:1.5em; padding-bottom:0.3em; border-bottom:1px solid var(--border); }
+    .md-content h2 { font-size:1.3em; padding-bottom:0.3em; border-bottom:1px solid var(--border); }
+    .md-content h3 { font-size:1.15em; } .md-content h4 { font-size:1em; }
+    .md-content p { margin:0.7em 0; }
+    .md-content ul, .md-content ol { margin:0.6em 0; padding-left:1.6em; }
+    .md-content li { margin:0.25em 0; }
+    .md-content li > ul, .md-content li > ol { margin:0.25em 0; }
+    .md-content a { color:var(--accent); text-decoration:underline; }
+    .md-content blockquote { margin:0.8em 0; padding:0.2em 1em; color:var(--muted); border-left:0.25em solid var(--border); }
+    .md-content hr { margin:1.2em 0; border:none; border-top:1px solid var(--border); }
+    .md-content code { background:var(--code-bg); padding:0.15em 0.4em; border-radius:4px; font-size:0.88em; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .md-content pre { background:var(--bg-soft); border:1px solid var(--border); padding:0.9rem 1rem; border-radius:8px; overflow:auto; margin:0.8em 0; font-size:0.85rem; line-height:1.55; }
+    .md-content pre code { background:none; padding:0; font-size:inherit; }
+    .md-content img { max-width:100%; border-radius:8px; }
   </style>
 </DashboardLayout>
