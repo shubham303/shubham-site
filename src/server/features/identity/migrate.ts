@@ -4,10 +4,11 @@
 // serverless (Vercel) we can't run a CLI step as part of deploy. Instead we
 // invoke `getMigrations()` + `runMigrations()` from `ensureInit()` — it diffs
 // the live DB against the schema BetterAuth derives from our config (including
-// plugins + the custom `user.role` field) and applies the DDL. Idempotent:
-// safe to run on every cold start.
+// plugins) and applies the DDL. Idempotent: safe to run on every cold start.
+// Note: in better-auth >= 1.6, getMigrations moved from `better-auth/db` to
+// `better-auth/db/migration` (the public subpath).
 
-import { getMigrations } from 'better-auth/db';
+import { getMigrations } from 'better-auth/db/migration';
 import { auth } from './auth';
 
 // Re-exported so db/index.ts can call it from ensureInit() without importing

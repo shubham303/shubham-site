@@ -14,7 +14,7 @@
 // wire contract flow through here.
 
 import type { APIContext } from 'astro';
-import { auth } from './auth';
+import { auth, isBillingEnabled } from './auth';
 import { getDb } from '../../db';
 
 export type Role = 'free' | 'pro';
@@ -50,9 +50,11 @@ interface SubscriptionRow {
 
 /**
  * The user's subscription row from the razorpay plugin's `subscription` table
- * (referenceId = userId), or null if none.
+ * (referenceId = userId), or null if none. Returns null without querying in
+ * demo mode (billing disabled) — the table doesn't exist in that mode.
  */
 async function getProSubscription(userId: string): Promise<SubscriptionRow | null> {
+  if (!isBillingEnabled()) return null;
   const rows = await getDb().execute(
     `select status, plan, "trialEnd" as trial_end
        from subscription
@@ -65,12 +67,14 @@ async function getProSubscription(userId: string): Promise<SubscriptionRow | nul
 }
 
 /**
- * Effective role. `pro` iff there's a `pro` subscription that is active (paid)
- * or trialing within its trial window. Everything else — no subscription,
- * expired/cancelled/paused/halted — resolves to `free`. The plugin + Razorpay
- * webhooks own all status transitions; we only read.
+ * Effective role. In DEMO MODE (billing disabled) every signed-in user is
+ * `pro`. Otherwise `pro` iff there's a `pro` subscription that is active
+ * (paid) or trialing within its trial window; everything else (no
+ * subscription, expired/cancelled/paused/halted) resolves to `free`. The
+ * plugin + Razorpay webhooks own all status transitions; we only read.
  */
 export async function roleForUser(userId: string): Promise<Role> {
+  if (!isBillingEnabled()) return 'pro';
   const sub = await getProSubscription(userId);
   if (!sub) return 'free';
   if (sub.status === 'active') return 'pro';

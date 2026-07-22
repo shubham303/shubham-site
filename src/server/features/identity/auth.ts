@@ -15,11 +15,14 @@
 // Auth + subscription tables are created by the programmatic migration in
 // ./migrate.ts (run from ensureInit()).
 //
-// The razorpay plugin is ALWAYS registered and requires the three Razorpay
-// env vars at runtime. Construction is deferred (lazy) so `astro build`
-// (which prerenders static pages and imports this module via the middleware)
-// doesn't need keys — `ensureRazorpayConfigured()` is called from ensureInit()
-// on the first real request.
+// The razorpay plugin is registered ONLY when the three Razorpay env vars are
+// present. When they're absent the app runs in DEMO MODE: no plugin, no
+// `subscription` table, no webhook, and roleForUser() short-circuits to `pro`
+// so every signed-in user has full access. Drop the keys into .env / Vercel to
+// turn real billing back on — no code change needed. Construction is deferred
+// (lazy) so `astro build` (which prerenders static pages and imports this
+// module via the middleware) doesn't need keys — the check runs from
+// ensureInit() on the first real request.
 
 import { betterAuth } from 'better-auth';
 import { jwt } from 'better-auth/plugins';
@@ -32,19 +35,41 @@ export const PRO_PLAN = 'pro';
 export const TRIAL_DAYS = 3;
 
 /**
- * Throw a clear error if Razorpay keys aren't configured. Called from
- * ensureInit() so it fires on the first real (non-prerendered) request, not
- * at build time. The Razorpay plugin is always enabled — local dev must
- * provide test-mode keys (they're free).
+ * True iff all three Razorpay keys are set. When false the app runs in demo
+ * mode: the plugin is skipped, no `subscription` table is created, and
+ * roleForUser() returns `pro` for everyone. Flip to true by setting the keys.
+ */
+export function isBillingEnabled(): boolean {
+  return Boolean(
+    process.env.RAZORPAY_KEY_ID &&
+      process.env.RAZORPAY_KEY_SECRET &&
+      process.env.RAZORPAY_WEBHOOK_SECRET,
+  );
+}
+
+/**
+ * Called from ensureInit(). Throws only if SOME (but not all) Razorpay keys
+ * are set — a half-configured state is almost certainly a mistake. When none
+ * are set the app silently runs in demo mode (logged once).
  */
 export function ensureRazorpayConfigured(): void {
-  const missing = ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'].filter(
-    (k) => !process.env[k],
+  const present = ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'].filter(
+    (k) => process.env[k],
   );
-  if (missing.length) {
+  if (present.length === 0) {
+    console.warn(
+      '[billing] RAZORPAY_* keys not set — running in DEMO MODE. ' +
+        'Every signed-in user gets Pro access. Set the keys to enable billing.',
+    );
+    return;
+  }
+  if (present.length < 3) {
+    const missing = ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'].filter(
+      (k) => !process.env[k],
+    );
     throw new Error(
-      `${missing.join(', ')} not set. The Razorpay plugin is always enabled — provide ` +
-      'Razorpay test-mode keys in .env for local dev and in Vercel for prod.',
+      `${missing.join(', ')} not set. Either set ALL Razorpay keys (RAZORPAY_KEY_ID, ` +
+        'RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET) or leave ALL empty for demo mode.',
     );
   }
 }
@@ -56,29 +81,24 @@ export function ensureRazorpayConfigured(): void {
 let _auth: ReturnType<typeof betterAuth> | null = null;
 
 function buildAuth(): ReturnType<typeof betterAuth> {
-  const razorpayClient = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-  });
-  return betterAuth({
-    database: {
-      // BetterAuth uses its own Kysely instance against the same Neon pool.
-      db: getKysely(),
-      type: 'postgres',
-    },
-    secret: process.env.BETTER_AUTH_SECRET,
-    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4321',
-    trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
-      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map((o) => o.trim())
-      : undefined,
-    emailAndPassword: { enabled: true },
-    plugins: [
-      jwt({}),
-      apiKey({
-        defaultPrefix: 'ti_',
-        requireName: false,
-        startingCharactersConfig: { shouldStore: true, charactersLength: 11 },
-      }),
+  const plugins: any[] = [
+    jwt({}),
+    apiKey({
+      defaultPrefix: 'ti_',
+      requireName: false,
+      startingCharactersConfig: { shouldStore: true, charactersLength: 11 },
+    }),
+  ];
+
+  // Only register the razorpay plugin when billing is enabled. In demo mode
+  // (no keys) it's omitted entirely, so no `subscription` table is created
+  // and no Razorpay client is constructed.
+  if (isBillingEnabled()) {
+    const razorpayClient = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+    plugins.push(
       razorpay({
         razorpayClient,
         razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET!,
@@ -94,7 +114,22 @@ function buildAuth(): ReturnType<typeof betterAuth> {
           ],
         },
       }),
-    ],
+    );
+  }
+
+  return betterAuth({
+    database: {
+      // BetterAuth uses its own Kysely instance against the same Neon pool.
+      db: getKysely(),
+      type: 'postgres',
+    },
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4321',
+    trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
+      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map((o) => o.trim())
+      : undefined,
+    emailAndPassword: { enabled: true },
+    plugins,
   });
 }
 

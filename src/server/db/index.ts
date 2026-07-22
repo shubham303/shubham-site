@@ -11,8 +11,8 @@
 
 import type { Database } from './database';
 import { PostgresDatabase } from './database';
-import { Kysely, PostgresDialect } from 'kysely';
-import type { RawPostgresDialectConfig } from 'kysely';
+import { Kysely } from 'kysely';
+import { PostgresJSDialect } from 'kysely-postgres-js';
 import postgres from 'postgres';
 
 let db: Database | null = null;
@@ -40,9 +40,9 @@ export function getDb(): Database {
 /**
  * A Kysely instance bound to the same Neon pool. BetterAuth (and its plugins)
  * uses this to own its tables (user/session/account/verification/key +
- * razorpay's subscription + user.razorpayCustomerId). We keep one pooled
- * postgres.js connection shared with the repositories rather than opening a
- * second pool.
+ * razorpay's subscription + user.razorpayCustomerId). We use the
+ * `kysely-postgres-js` dialect — Kysely's built-in PostgresDialect speaks the
+ * `pg` API, not `postgres.js`, so the two are not interchangeable.
  */
 export function getKysely(): Kysely<any> {
   if (!kysely) {
@@ -51,9 +51,7 @@ export function getKysely(): Kysely<any> {
       throw new Error('DATABASE_URL is not set or is not a postgres:// URL.');
     }
     pgForKysely = postgres(url, { max: 5, prepare: false, ssl: 'require' });
-    const dialect = new PostgresDialect({
-      postgres: pgForKysely,
-    } as unknown as RawPostgresDialectConfig);
+    const dialect = new PostgresJSDialect({ postgres: pgForKysely });
     kysely = new Kysely({ dialect });
   }
   return kysely;
