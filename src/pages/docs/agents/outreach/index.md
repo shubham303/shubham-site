@@ -12,7 +12,7 @@ and lets you review and edit before anything goes out. Table Intelligence stores
 data — it does **not** send email. Sending happens in your agent through your own email tool
 (Gmail, SMTP…).
 
-> Outreach is a **premium connector**. Start a trial or upgrade on [pricing](/pricing).
+> Outreach is a **Pro connector**. Start a trial or upgrade on [pricing](/pricing).
 
 ## The model
 

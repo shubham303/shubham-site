@@ -1,23 +1,21 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import { ensureInit, getProvider } from '@server/db/factory';
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
-import { tierForUser } from '@server/services/entitlementService';
-import { listFolders, listReports } from '@server/services/reportService';
+import { ensureInit } from '@server/db';
+import { roleForUser } from '@server/features/identity/service';
+import { listFolders, listReports } from '@server/features/reports/service';
 
 export const prerender = false;
 
 await ensureInit();
-const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
-if (!uid) return Astro.redirect('/login');
-const user = await getProvider().users.getById(uid);
-const tier = await tierForUser(uid);
-const folders = await listFolders(uid);
-const reports = await listReports(uid);
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+const role = await roleForUser(user.id);
+const folders = await listFolders(user.id);
+const reports = await listReports(user.id);
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 const folderName = (id: string | null) => folders.find((f) => f.id === id)?.name;
 ---
-<DashboardLayout active="reports" email={user?.email} tier={tier} title="Reports — Table Intelligence">
+<DashboardLayout active="reports" email={user.email} role={role} title="Reports — Table Intelligence">
   <div class="head"><h1>Reports</h1><span class="count">{reports.length}</span></div>
   <p class="muted">Analyses your agent saved. Open one to read the full report.</p>
 

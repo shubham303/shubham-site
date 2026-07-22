@@ -1,22 +1,21 @@
 import type { APIRoute } from 'astro';
-import { withUser, withPaidUser, readBody, fail } from '@server/lib/api';
-import { json } from '@server/lib/http';
-import { getEmail, updateEmail, deleteEmail } from '@server/services/outreachService';
+import { withUser, withPro, readBody, fail, json } from '@server/features/identity/service';
+import { getEmail, updateEmail, deleteEmail } from '@server/features/outreach/service';
 
 export const prerender = false;
 
 export const GET: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => {
-    const e = await getEmail(uid, String(ctx.params.id));
+  withUser(ctx, async (u) => {
+    const e = await getEmail(u.id, String(ctx.params.id));
     return e ? json({ email: e }) : json({ error: 'not_found' }, 404);
   });
 
 export const PATCH: APIRoute = (ctx) =>
-  withPaidUser(ctx, async (uid) => {
+  withPro(ctx, async (u) => {
     const b = await readBody(ctx);
-    try { return json({ ...(await updateEmail(uid, String(ctx.params.id), b)) }); }
+    try { return json({ ...(await updateEmail(u.id, String(ctx.params.id), b)) }); }
     catch (e) { return fail(e); }
   });
 
 export const DELETE: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => json(await deleteEmail(uid, String(ctx.params.id))));
+  withUser(ctx, async (u) => json(await deleteEmail(u.id, String(ctx.params.id))));

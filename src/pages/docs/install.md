@@ -6,7 +6,7 @@ title: Install
 # Install the MCP server
 
 Table Intelligence ships as a **local MCP server** (`tabint`). Your agent starts it on your
-machine over stdio; it talks to this website only to read your subscription tier and to save the
+machine over stdio; it talks to this website only to read your role (`free` or `pro`) and to save the
 reports, campaigns, and emails you explicitly ask it to save. Your datasets never leave your
 machine.
 
@@ -265,7 +265,7 @@ In your agent, ask:
 
 > What's my Table Intelligence account status?
 
-The agent should call the **`account_status`** tool and report your tier (`trial`, `paid`, or
+The agent should call the **`account_status`** tool and report your role (`pro` or
 `free`). If it reports `free` even though you set `TABINT_API_KEY`, double-check the key and that
 the venv path is absolute and correct.
 
@@ -278,8 +278,8 @@ the venv path is absolute and correct.
   and starts with `ti_`. The key is validated against
   `TABINT_CONTROL_PLANE_URL` — leave it at `https://shubhamrandive.com` unless you've been told
   otherwise.
-- **"not entitled" / `paid_feature` on a trial account.** Trials last 3 days from signup. After
-  that, subscribe on the [pricing page](/pricing), or recheck `account_status`.
+- **"not entitled" / `pro_feature` on a trial account.** Subscriptions (with a 3-day free trial)
+  start on the [pricing page](/pricing). After a trial lapses, `account_status` reports `free`.
 - **Cowork can't see the server.** Cowork is remote-only — see the note in the Claude Desktop
   section. Use Claude Code or Claude Desktop for local installs.
 - **Server shows as failed in the agent.** Run the command manually in a terminal to see the

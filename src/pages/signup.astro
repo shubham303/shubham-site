@@ -41,13 +41,16 @@ export const prerender = false;
       btn.disabled = true; btn.textContent = 'Creating…';
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const r = await fetch('/api/auth/signup', {
+      // BetterAuth sign-up endpoint (served by /api/auth/[...all]). The cookie
+      // is set automatically on success. The 3-day pro trial is granted by the
+      // server-side user.create.after hook — no client-side step needed.
+      const r = await fetch('/api/auth/sign-up/email', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, name: email.split('@')[0] }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        document.getElementById('msg').textContent = d.error || 'Something went wrong.';
+        document.getElementById('msg').textContent = d?.message || d?.error || 'Something went wrong.';
         btn.disabled = false; btn.textContent = 'Create account';
         return;
       }

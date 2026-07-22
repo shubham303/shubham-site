@@ -36,13 +36,13 @@ Each tool returns a structured result: the **method** chosen, a plain‑language
 
 All analytics are **free forever** and run entirely on your machine.
 
-## Account & reports (premium / trial)
+## Account & reports (pro / trial)
 
 | Tool | Purpose |
 |------|---------|
-| `account_status` | Show your subscription tier. |
+| `account_status` | Show your role (`free` or `pro`). |
 | `save_report` | Save a report to your account. |
 | `list_reports`, `get_report` | Browse saved reports. |
 | `create_folder`, `list_folders` | Organize reports. |
 
-Saving reports needs an active trial or premium — see [Pricing](/pricing).
+Saving reports needs an active trial or pro subscription — see [Pricing](/pricing).

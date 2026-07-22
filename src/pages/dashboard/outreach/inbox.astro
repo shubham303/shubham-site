@@ -1,20 +1,18 @@
 ---
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import { ensureInit, getProvider } from '@server/db/factory';
-import { verifySession, SESSION_COOKIE } from '@server/lib/session';
-import { tierForUser } from '@server/services/entitlementService';
-import { listReceived } from '@server/services/outreachService';
+import { ensureInit } from '@server/db';
+import { roleForUser } from '@server/features/identity/service';
+import { listReceived } from '@server/features/outreach/service';
 
 export const prerender = false;
 await ensureInit();
-const uid = verifySession(Astro.cookies.get(SESSION_COOKIE)?.value);
-if (!uid) return Astro.redirect('/login');
-const user = await getProvider().users.getById(uid);
-const tier = await tierForUser(uid);
-const received = await listReceived(uid);
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+const role = await roleForUser(user.id);
+const received = await listReceived(user.id);
 const fmt = (d: string | null) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
 ---
-<DashboardLayout active="inbox" email={user?.email} tier={tier} title="Inbox — Table Intelligence">
+<DashboardLayout active="inbox" email={user.email} role={role} title="Inbox — Table Intelligence">
   <div class="head"><h1>Inbox</h1><span class="count">{received.length}</span></div>
   <p class="muted">Replies your agent has saved. Not campaign-specific — the agent records incoming
     email here as it comes in. (Threading to sent emails is a future version.)</p>

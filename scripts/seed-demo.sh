@@ -15,10 +15,22 @@ EMAIL="demo@example.com"; PASS="demopass123"
 get() { python3 -c "import sys,json;print(json.load(sys.stdin).get('$1',''))" 2>/dev/null || true; }
 
 echo "Seeding $BASE ..."
-SIGNUP=$(curl -s -X POST "$BASE/api/auth/signup" -H 'content-type: application/json' -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\"}")
-KEY=$(printf '%s' "$SIGNUP" | get apiKey)
-if [ -z "$KEY" ]; then echo "  $SIGNUP"; echo "(email_taken? log in with $EMAIL / $PASS)"; exit 0; fi
-H=(-H "Authorization: Bearer $KEY" -H "content-type: application/json")
+# BetterAuth sign-up (served by /api/auth/[...all]). Sets the session cookie in
+# the cookie jar so the cookie-authed API calls below work.
+COOKIE=$(mktemp); trap 'rm -f "$COOKIE"' EXIT
+SIGNUP=$(curl -s -c "$COOKIE" -X POST "$BASE/api/auth/sign-up/email" \
+  -H 'content-type: application/json' \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"name\":\"Demo\"}")
+if ! printf '%s' "$SIGNUP" | grep -q '"user"'; then
+  echo "  $SIGNUP"; echo "(email_taken? log in with $EMAIL / $PASS)"; exit 0
+fi
+# Mint an API key (cookie-authed). We send data with the x-api-key header so
+# this works exactly like the MCP server would.
+KEYRES=$(curl -s -b "$COOKIE" -X POST "$BASE/api/account/api-keys" \
+  -H 'content-type: application/json' -d '{"name":"seed-demo"}')
+KEY=$(printf '%s' "$KEYRES" | get apiKey)
+if [ -z "$KEY" ]; then echo "  signup ok but key mint failed: $KEYRES"; exit 0; fi
+H=(-H "x-api-key: $KEY" -H "content-type: application/json")
 
 # --- data analysis: a folder + reports ---
 curl -s "${H[@]}" -X POST "$BASE/api/folders" -d '{"name":"Demo Client"}' >/dev/null

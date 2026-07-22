@@ -1,17 +1,16 @@
 import type { APIRoute } from 'astro';
-import { withUser, withPaidUser, readBody, fail } from '@server/lib/api';
-import { json } from '@server/lib/http';
-import { listReceived, saveReceived } from '@server/services/outreachService';
+import { withUser, withPro, readBody, fail, json } from '@server/features/identity/service';
+import { listReceived, saveReceived } from '@server/features/outreach/service';
 
 export const prerender = false;
 
 export const GET: APIRoute = (ctx) =>
-  withUser(ctx, async (uid) => json({ received: await listReceived(uid) }));
+  withUser(ctx, async (u) => json({ received: await listReceived(u.id) }));
 
 export const POST: APIRoute = (ctx) =>
-  withPaidUser(ctx, async (uid) => {
+  withPro(ctx, async (u) => {
     const b = await readBody(ctx);
     try {
-      return json({ ok: true, ...(await saveReceived(uid, { sender: b.sender, subject: b.subject, body: b.body, received_at: b.received_at })) });
+      return json({ ok: true, ...(await saveReceived(u.id, { sender: b.sender, subject: b.subject, body: b.body, received_at: b.received_at })) });
     } catch (e) { return fail(e); }
   });

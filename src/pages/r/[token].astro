@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { ensureInit } from '@server/db/factory';
-import { getSharedReport } from '@server/services/reportService';
+import { ensureInit } from '@server/db';
+import { getSharedReport } from '@server/features/reports/service';
 
 export const prerender = false;
 

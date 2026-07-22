@@ -25,6 +25,11 @@ export class PostgresDatabase implements Database {
     return rows as any[];
   }
 
+  /** Raw postgres.js handle — used only by BetterAuth's Kysely adapter. */
+  get handle(): any {
+    return this.sql;
+  }
+
   async close(): Promise<void> {
     await this.sql.end({ timeout: 5 });
   }

@@ -1,21 +1,23 @@
+// GET /api/account — who am I + what can I do? Resolves from the session
+// cookie (browser) or x-api-key (MCP) via the identity service.
+
 import type { APIRoute } from 'astro';
-import { ensureInit, getProvider } from '@server/db/factory';
-import { tierForUser } from '@server/services/entitlementService';
-import { json, userFromRequest } from '@server/lib/http';
+import { ensureInit } from '@server/db';
+import { json } from '@server/lib/http';
+import { userFromRequest, roleForUser } from '@server/features/identity/service';
+import { listApiKeys } from '@server/features/identity/apiKeyService';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, cookies }) => {
+export const GET: APIRoute = async ({ request }) => {
   await ensureInit();
-  const userId = await userFromRequest(request, cookies);
-  if (!userId) return json({ error: 'not_authenticated' }, 401);
-  const p = getProvider();
-  const user = await p.users.getById(userId);
-  const tier = await tierForUser(userId);
-  const keys = await p.apiKeys.listByUser(userId);
+  const user = await userFromRequest(request);
+  if (!user) return json({ error: 'not_authenticated' }, 401);
+  const role = await roleForUser(user.id);
+  const keys = await listApiKeys(request);
   return json({
-    email: user?.email,
-    tier,
+    email: user.email,
+    role,
     api_keys: keys.map((k) => k.key_prefix),
   });
 };
