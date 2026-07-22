@@ -85,6 +85,11 @@ function buildAuth(): ReturnType<typeof betterAuth> {
     jwt({}),
     apiKey({
       defaultPrefix: 'ti_',
+      // Let an `x-api-key` header synthesize a session so server routes can
+      // authenticate the MCP server via auth.api.getSession({ headers }) — the
+      // apiKey plugin's before-hook is skipped without this flag, so
+      // withUser/withPro gates would 401 on the same key verifyApiKey accepts.
+      enableSessionForAPIKeys: true,
       requireName: false,
       startingCharactersConfig: { shouldStore: true, charactersLength: 11 },
     }),
