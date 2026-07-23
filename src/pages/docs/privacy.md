@@ -15,10 +15,9 @@ Table Intelligence is **local‑first** by design.
 
 ## What leaves your machine
 
-- **Your API key**, sent to our website to check your subscription (`/api/validate-key`).
 - **Reports you explicitly save.** When you ask the agent to save a report, that report's
   content (which you control) is sent to your account so you can read it on the dashboard. If you
-  never save a report, nothing but the key check is transmitted.
+  never save a report, no analysis data is transmitted.
 
 ## What we never receive
 

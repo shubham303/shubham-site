@@ -1,8 +1,17 @@
 ---
-// Shared top navigation for the marketing/content tabs.
+// Shared top navigation for the Table Intelligence site.
 // Auth state comes from the middleware (Astro.locals.user).
-interface Props { active?: string }
-const { active } = Astro.props;
+//
+// - Full mode (default, home only): brand + content tabs + a single auth
+//   CTA — Login when logged out, Account when logged in.
+// - Minimal mode (`minimal` prop, used on leaf pages): brand only, linking
+//   back to /. No tabs, no CTA. Auth state is skipped in minimal mode so the
+//   component stays usable on prerendered (static) pages.
+interface Props { active?: string; minimal?: boolean }
+const { active, minimal = false } = Astro.props;
+// Only read auth state in full mode; minimal mode never needs it, and reading
+// it on a prerendered page triggers a build warning (headers unavailable).
+const loggedIn = minimal ? false : !!Astro.locals.user;
 const tabs = [
   { label: 'Home', href: '/' },
   { label: 'About', href: '/about' },
@@ -10,27 +19,24 @@ const tabs = [
   { label: 'Docs', href: '/docs' },
   { label: 'Pricing', href: '/pricing' },
 ];
-const loggedIn = !!Astro.locals.user;
 ---
 <header class="ti-nav">
   <div class="ti-nav-row">
     <a href="/" class="ti-brand">▚ Table Intelligence</a>
-    <nav class="ti-links">
-      {tabs.map((t) => (
-        <a href={t.href} class={active === t.label ? 'on' : ''}>{t.label}</a>
-      ))}
-      {loggedIn ? (
-        <>
-          <a href="/dashboard" class={active === 'Dashboard' ? 'on' : ''}>Dashboard</a>
+    {minimal ? (
+      <span class="ti-active-tab">{active}</span>
+    ) : (
+      <nav class="ti-links">
+        {tabs.map((t) => (
+          <a href={t.href} class={active === t.label ? 'on' : ''}>{t.label}</a>
+        ))}
+        {loggedIn ? (
           <a href="/dashboard/account" class="ti-cta">Account</a>
-        </>
-      ) : (
-        <>
-          <a href="/login" class="ti-signin">Sign in</a>
-          <a href="/signup" class="ti-cta">Start free</a>
-        </>
-      )}
-    </nav>
+        ) : (
+          <a href="/login" class="ti-cta">Login</a>
+        )}
+      </nav>
+    )}
   </div>
 </header>
 
@@ -55,6 +61,7 @@ const loggedIn = !!Astro.locals.user;
   }
   .ti-brand { font-weight: 700; color: var(--fg); letter-spacing: -0.01em; white-space: nowrap; }
   .ti-brand:hover { text-decoration: none; }
+  .ti-active-tab { color: var(--muted); font-size: 0.94rem; font-weight: 600; }
   .ti-links { display: flex; align-items: center; gap: 1.05rem; }
   .ti-links a { color: var(--muted); font-size: 0.94rem; }
   .ti-links a:hover { color: var(--fg); text-decoration: none; }
@@ -70,7 +77,6 @@ const loggedIn = !!Astro.locals.user;
   .ti-cta:hover { filter: brightness(1.05); text-decoration: none !important; }
   @media (max-width: 620px) {
     .ti-links { gap: 0.7rem; }
-    .ti-links a.ti-signin,
-    .ti-links a:not(.on):not(.ti-cta):not(.ti-signin) { display: none; }
+    .ti-links a:not(.on):not(.ti-cta) { display: none; }
   }
 </style>
