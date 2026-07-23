@@ -4,7 +4,7 @@ import Nav from '../components/Nav.astro';
 export const prerender = false;
 ---
 <Layout title="Pricing — Table Intelligence">
-  <Nav active="Pricing" />
+  <Nav minimal active="Pricing" />
   <div class="pricing">
     <div class="ph">
       <span class="beta">Beta</span>
@@ -40,6 +40,7 @@ export const prerender = false;
           <li>New connectors as they launch</li>
         </ul>
         <a class="btn" href="/signup">Start free trial →</a>
+        <a class="bmc" href="https://www.buymeacoffee.com/shubham303" rel="noopener" target="_blank">☕ Buy me a coffee</a>
       </div>
     </div>
 
@@ -136,6 +137,14 @@ export const prerender = false;
     }
     .btn:hover { opacity: 0.92; text-decoration: none; }
     .btn.ghost { background: var(--bg); color: var(--accent); }
+    .bmc {
+      display: block;
+      text-align: center;
+      margin-top: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .bmc:hover { color: var(--fg); text-decoration: none; }
 
     .servers { margin-top: 2.75rem; }
     .servers h2 { font-size: 1.25rem; margin: 0 0 0.3rem; }

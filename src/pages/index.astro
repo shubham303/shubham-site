@@ -1,11 +1,8 @@
 ---
-import { platformHomeEnabled } from '@server/lib/flags';
 import PlatformHome from '../components/home/PlatformHome.astro';
-import PersonalHome from '../components/home/PersonalHome.astro';
 export const prerender = false;
 
-// Feature flag: PLATFORM_HOME=true makes / the platform landing.
-// Default (off) keeps the original personal homepage in production.
-const showPlatform = platformHomeEnabled();
+// The site root is the Table Intelligence landing (the hub). Sub-pages
+// (About, Blog, Pricing, Docs) are leaves with a brand-only header back to /.
 ---
-{showPlatform ? <PlatformHome /> : <PersonalHome />}
+<PlatformHome />

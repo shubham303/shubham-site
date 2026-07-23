@@ -1,7 +1,6 @@
 ---
-// The platform landing — always reachable here, regardless of the PLATFORM_HOME
-// flag that controls what the site root (/) shows.
-import PlatformHome from '../components/home/PlatformHome.astro';
+// The Table Intelligence landing now lives at the site root (/).
+// This route is kept as a permanent redirect for existing links/bookmarks.
 export const prerender = false;
+return Astro.redirect('/', 301);
 ---
-<PlatformHome />

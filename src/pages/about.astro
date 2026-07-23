@@ -8,6 +8,7 @@ const posts = (await getCollection('blog')).sort(
 );
 
 const links = [
+  { label: 'Books', href: '/books/' },
   { label: 'Book a call', href: 'https://calendly.com/randiveshubham3/30min' },
   { label: 'Email', href: 'mailto:randiveshubham3@gmail.com' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/shubham-randive-303/' },
@@ -23,7 +24,7 @@ const fmt = (d: Date) =>
 ---
 
 <Layout title="About — Shubham Randive">
-  <Nav active="About" />
+  <Nav minimal active="About" />
   <header class="intro">
     <div class="intro-text">
       <h1>Shubham Randive</h1>
