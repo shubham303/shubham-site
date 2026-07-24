@@ -90,8 +90,10 @@ export function ensureInit(): Promise<void> {
       // Feature tables: each feature declares its own.
       const { createTables: reports } = await import('../features/reports/model');
       const { createTables: outreach } = await import('../features/outreach/model');
+      const { createTables: social } = await import('../features/social/model');
       await reports(d);
       await outreach(d);
+      await social(d);
     })();
   }
   return initialized;
