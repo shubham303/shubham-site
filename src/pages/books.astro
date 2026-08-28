@@ -45,10 +45,10 @@ const tech = [
     note: '',
   },
   {
-    title: 'Deep Learning — lecture series',
+    title: 'Deep Learning lecture series',
     author: 'Mitesh Khapra (IIT Madras)',
     href: 'https://www.youtube.com/results?search_query=Mitesh+Khapra+Deep+Learning',
-    note: 'Free lectures on YouTube — one of the clearest deep learning courses out there.',
+    note: 'Free lectures on YouTube, one of the clearest deep learning courses out there.',
   },
   {
     title: 'API Security in Action',
@@ -57,7 +57,7 @@ const tech = [
     note: '',
   },
   {
-    title: 'SEO — Ahrefs guides',
+    title: 'SEO: Ahrefs guides',
     author: 'Ahrefs',
     href: 'https://ahrefs.com/seo',
     note: 'Where I go to (occasionally) understand what search engines actually want.',
@@ -78,7 +78,7 @@ const tech = [
 ---
 
 <Layout
-  title="Books — What I Read on ML, Systems and Building"
+  title="Books: What I Read on ML, Systems and Building"
   description="The books, courses and guides that shaped how Shubham Randive thinks about machine learning, distributed systems, API security and building small products."
 >
   <Nav active="Books" />
@@ -95,7 +95,7 @@ const tech = [
       general.map((b) => (
         <li>
           <a href={b.href} rel="noopener">{b.title}</a>
-          {b.author && <span class="author"> — {b.author}</span>}
+          {b.author && <span class="author"> by {b.author}</span>}
           {b.note && <p class="note">{b.note}</p>}
         </li>
       ))
@@ -108,7 +108,7 @@ const tech = [
       tech.map((b) => (
         <li>
           <a href={b.href} rel="noopener">{b.title}</a>
-          {b.author && <span class="author"> — {b.author}</span>}
+          {b.author && <span class="author"> by {b.author}</span>}
           {b.note && <p class="note">{b.note}</p>}
         </li>
       ))

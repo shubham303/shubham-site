@@ -2,7 +2,7 @@
 interface Props {
   title: string;
   description: string;
-  /** og:type — "website" for pages, "article" for blog posts. */
+  /** og:type: "website" for pages, "article" for blog posts. */
   type?: string;
   /** JSON-LD graph node(s) for this page. */
   schema?: Record<string, unknown> | Record<string, unknown>[];
@@ -72,7 +72,7 @@ const jsonLd = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 </html>
 
 <style is:global>
-  /* Deliberately minimal — a clean, GitHub-README feel. Default: light (white).
+  /* Deliberately minimal: a clean, GitHub-README feel. Default: light (white).
      Dark is opt-in via the toggle (persisted in localStorage). */
   :root {
     --fg: #1f2328;

@@ -1,7 +1,7 @@
 ---
 title: "Automating cold outreach with a self-correcting AI agent"
 date: 2026-07-18
-description: "Research, write, send, check, recover — an AI agent ran my whole cold-email pipeline using Claude, Resend, and a domain I already owned. Cost: zero."
+description: "Research, write, send, check, recover. An AI agent ran my whole cold-email pipeline using Claude, Resend, and a domain I already owned. Cost: zero."
 ---
 
 **An AI agent ran my whole cold-outreach pipeline on three tools I already had, for nothing.** Research, write, send, verify, recover. The sending is the boring part. The part worth writing about is what happened when one address bounced: the agent noticed, found the real address, and resent.
@@ -10,72 +10,72 @@ description: "Research, write, send, check, recover — an AI agent ran my whole
 
 | Piece | Job | Cost |
 | --- | --- | --- |
-| [Claude](https://claude.com/product/claude-code) | Operator — researches, writes, sends, checks, recovers | Existing subscription |
+| [Claude](https://claude.com/product/claude-code) | Operator: researches, writes, sends, checks, recovers | Existing subscription |
 | [Resend](https://resend.com/docs/introduction) | Sends and receives mail via one API call | Free tier |
 | [Model Context Protocol](https://modelcontextprotocol.io/) | How Claude reaches those tools | Open standard |
 | My own domain | Sender identity, [SPF and DKIM](https://support.google.com/a/answer/81126) | Already owned |
 
-Every solo consultant hears the same advice: **do cold outreach.** And it's good advice. The
-trouble is that outreach done well is a grind — find the businesses, research each one, write
-something that doesn't read like a template, dig up the right email, send, notice the bounces,
-find the correct address, try again. Ten prospects eats an afternoon. Do it weekly and you'll
+Every solo consultant hears the same advice: **do cold outreach.** It is good advice. The
+trouble is that outreach done well is a grind. Find the businesses, research each one, write
+something that does not read like a template, dig up the right email, send, notice the bounces,
+find the correct address, try again. Ten prospects eats an afternoon. Do it weekly and you will
 quietly stop, which is what happens to most people's outreach.
 
-So I stopped doing it, and let an AI agent do it instead. Not a $99/month "AI SDR" — just
-three things I already had: **Claude** as the operator, **Resend** as the mail engine, and my
-**own domain** as the sender. Total added cost: zero.
+So I stopped doing it and let an AI agent do it instead. Not a $99/month "AI SDR", just three
+things I already had: **Claude** as the operator, **Resend** as the mail engine, and my **own
+domain** as the sender. Total added cost: zero.
 
 ## The shift: an agent with hands, not a text box
 
-The trick isn't asking a chatbot to "write me a cold email." It's giving the model *hands*.
-Through the Model Context Protocol, Claude can call real tools inside one conversation — search
+The trick is not asking a chatbot to "write me a cold email." It is giving the model *hands*.
+Through the Model Context Protocol, Claude can call real tools inside one conversation: search
 the web, read my local files, send mail through Resend, check whether it landed. Once it can
-act, the whole pipeline collapses into a single flow, and I never touch the keyboard between
+act, the whole pipeline collapses into a single flow and I never touch the keyboard between
 steps:
 
 1. **Find and qualify** businesses worth contacting, to a playbook I wrote once.
-2. **Research each one** and write the findings out as Markdown — one file per company.
+2. **Research each one** and write the findings out as Markdown, one file per company.
 3. **Draft** an email from those notes, one natural opening line and nothing more.
 4. **Send** through Resend, one API call per prospect.
 5. **Verify** delivery status on every message.
-6. **Recover** — re-research and resend anything that bounced.
+6. **Recover** by re-researching and resending anything that bounced.
 
 Steps 1 through 5 are a workflow. Step 6 is what makes it an agent. Anthropic
 [puts it this way](https://www.anthropic.com/engineering/building-effective-agents): a workflow
 follows predefined code paths, an agent directs its own.
 
-And the prospecting itself is Claude's job too, not mine. I taught it the playbook once — how I
-like to find businesses worth contacting, qualify them, and note the right decision-maker — and
-packaged that into a reusable skill it can follow. So the research is the agent working to my
-standard, not me combing through websites by hand. It writes the results out as plain Markdown,
-one file per company: what they do, who to contact, their likely email — the same files it later
-reads back when it's time to write.
+The prospecting is Claude's job too. I taught it the playbook once, covering how I like to find
+businesses worth contacting, qualify them and note the right decision-maker, then packaged that
+into a reusable skill it can follow. The research is now the agent working to my standard rather
+than me combing through websites by hand. It writes the results out as plain Markdown, one file
+per company: what they do, who to contact, their likely email. Those are the same files it reads
+back when it is time to write.
 
-Resend is what makes the sending trivial. Email becomes one API call — `from`, `to`, `subject`,
-`text` — no SMTP, no Mailchimp dashboard. And it *receives*: point your domain's MX records at
-it and replies come back to an inbox the agent can read. The loop closes. It even ships an
-official MCP server, so all of that shows up to Claude as callable tools.
+Resend makes the sending trivial. Email becomes one API call with `from`, `to`, `subject` and
+`text`. No SMTP, no Mailchimp dashboard. It *receives* as well: point your domain's MX records at
+it and replies land in an inbox the agent can read. The loop closes. It also ships an official
+MCP server, so all of that shows up to Claude as callable tools.
 
 The domain is the quiet hero. Sending from my own address instead of a `@gmail.com` does two
-things at once. With SPF and DKIM verified, mailbox providers trust the mail — nearly every
-recipient in my batch accepted it on the first try. That part is now mandatory.
+things at once. With SPF and DKIM verified, mailbox providers trust the mail, and nearly every
+recipient in my batch accepted it on the first try. That part is now mandatory:
 [Google's sender guidelines](https://support.google.com/a/answer/81126) require SPF or DKIM of
-*every* sender, and a spam-complaint rate under 0.3%. Cross 5,000 messages a day and you also
-owe them DMARC and one-click unsubscribe. And the sender, the signature, and the
-portfolio link all match, so to the person reading it, this is obviously one real human. Because
-it is.
+*every* sender and a spam-complaint rate under 0.3%. Cross 5,000 messages a day and you also owe
+them DMARC and one-click unsubscribe. The second thing is credibility. The sender, the signature
+and the portfolio link all match, so to the person reading it this is obviously one real human.
+Because it is.
 
 ## Writing from a principle, not a template
 
-This is where most outreach automation goes wrong. It's tempting to have the AI stuff every
+This is where most outreach automation goes wrong. It is tempting to have the AI stuff every
 research finding into the email to *prove* it did its homework. That reads as creepy. So I gave
 Claude one rule instead of a template:
 
-> Keep it a simple, capability-led pitch — "I'm a data scientist; if you're drowning in data, I
+> Keep it a simple, capability-led pitch: "I'm a data scientist; if you're drowning in data, I
 > can help." Use the research for one natural opening line only. Never show off what you dug up.
 
 For a coffee roaster that opening became *"You run a roastery with an espresso bar and a training
-centre — which means you generate a lot of sales and customer data across those channels."* One
+centre, which means you generate a lot of sales and customer data across those channels."* One
 personal line, then the same honest, low-pressure ask. Every email came out different, none of
 them template-shaped, all in a single pass.
 
@@ -83,25 +83,25 @@ them template-shaped, all in a single pass.
 
 The agent sent the batch in seconds, one call per prospect. Then it did the step humans always
 skip: it checked delivery status on every message. Almost all came back *delivered*. One came
-back *bounced* — an address I'd guessed.
+back *bounced*, an address I had guessed.
 
-And then, without me saying anything, it fixed it. It recognized the failed address was a guess,
+Then, without me saying anything, it fixed it. It recognized the failed address was a guess,
 searched the web for the company's real contact, found the published address on their site,
-resent, and re-checked: delivered. No intervention. It noticed its own failure, diagnosed it,
-did fresh research, and recovered.
+resent, and re-checked: delivered. No intervention. It noticed its own failure, diagnosed it, did
+fresh research and recovered.
 
-That's the whole difference between a script and an agent. A script runs and reports what
-happened. An agent notices what went wrong and does something about it.
+That is the difference between a script and an agent. A script runs and reports what happened. An
+agent notices what went wrong and does something about it.
 
 ## What this actually means
 
-Strip away the specifics and the shape is this: a language model ran a real business process —
-research to delivery to error-recovery — using cheap, commodity tools, with a human only setting
+Strip away the specifics and the shape is this: a language model ran a real business process,
+research to delivery to error-recovery, using cheap commodity tools, with a human only setting
 the strategy.
 
-The cost is basically nothing. The bottleneck moved from *doing* outreach to *deciding who to
-reach and what to say* — which is exactly the part I should keep. And quality went *up*, because
-the tedious steps humans skip out of boredom are the ones an agent does every single time.
+The cost is close to nothing. The bottleneck moved from *doing* outreach to *deciding who to
+reach and what to say*, which is exactly the part I should keep. Quality went up too, because the
+tedious steps humans skip out of boredom are the ones an agent does every single time.
 
 A few honest caveats, because this is easy enough to abuse:
 
@@ -110,23 +110,22 @@ A few honest caveats, because this is easy enough to abuse:
 - **Verify addresses when you can.** A guessed address bounces, and every bounce feeds your
   [sender reputation](https://support.google.com/a/answer/81126).
 - **Know the rules you are sending under.** In the US that is
-  [CAN-SPAM](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business);
-  if any recipient is in the EU, [GDPR](https://gdpr-info.eu/art-6-gdpr/) governs whether you may
+  [CAN-SPAM](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business).
+  If any recipient is in the EU, [GDPR](https://gdpr-info.eu/art-6-gdpr/) governs whether you may
   contact them at all.
 - **Stay in the loop on strategy.** The agent wrote and sent, but I chose the pitch, the list and
   the tone. That judgment is the actual work.
 
-I didn't build a product or write a line of application code. I connected three things I already
+I did not build a product or write a line of application code. I connected three things I already
 had and described the outcome I wanted. The agent did the rest. The interesting future of AI at
-work isn't a chatbot that answers questions — it's an agent that *acts*, one that can take
-"reach out to these prospects" all the way to "delivered, and here's the one I had to fix."
+work is an agent that *acts*, one that can take "reach out to these prospects" all the way to
+"delivered, and here's the one I had to fix."
 
-That future is already here, it costs nothing, and it's sitting inside tools you probably already
-use.
+That future is already here, it costs nothing, and it sits inside tools you probably already use.
 
 ---
 
 *This is the kind of thing I do: build AI tools and agents that turn messy business data into
 decisions and automate the work that eats your team's time. If you're drowning in data and want
-to get more out of it, [get in touch](mailto:randiveshubham3@gmail.com) — I'm always happy to
-talk shop.*
+to get more out of it, [get in touch](mailto:randiveshubham3@gmail.com). I'm always happy to talk
+shop.*
