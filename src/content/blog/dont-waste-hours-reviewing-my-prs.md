@@ -1,8 +1,10 @@
 ---
-title: "Don't waste hours reviewing my PR's"
+title: "Don't waste hours reviewing my PRs — make review async"
 date: 2026-07-05
 description: "Synchronous, blocking code review is the biggest tax on shipping. Make review asynchronous — and trust the tests."
 ---
+
+**Blocking code review costs more than it catches.** Make the tests the gate and let the author merge. Move human review to an asynchronous pass over merged commits, where a reviewer sees patterns across a body of work instead of squinting at one frozen diff.
 
 ## The problem was never the comments. It's the waiting.
 
@@ -29,7 +31,13 @@ The typical cycle looks like this:
 7. Repeat.
 8. Merge.
 
-Steps 3 through 7 are almost pure latency. The value delivered — a working feature — was done at step 1. Everything after is a queue.
+Steps 3 through 7 are almost pure latency. The cost is measured, not just felt.
+[DORA's research on change approval](https://dora.dev/capabilities/streamlining-change-approval/)
+finds that heavyweight approval processes correlate with *worse* delivery performance. What they
+recommend instead is peer review during development, backed by automation. Their write-up on
+[trunk-based development](https://dora.dev/capabilities/trunk-based-development/) names the
+failure mode. Laborious review pushes developers to batch up changes. Bigger batches make bigger
+reviews. Bigger reviews make reviewers procrastinate. The spiral goes one way. The value delivered — a working feature — was done at step 1. Everything after is a queue.
 
 ## One stuck PR stalls the whole stack
 
@@ -50,6 +58,11 @@ The tests are the contract. The tests are the thing a naming-convention comment 
 Most of the time, the answer is: nothing. It solved a minor problem. It was taste dressed up as risk.
 
 ## What blocking review optimizes for is mostly dead weight
+
+Even Google runs a lighter process than the teams citing Google think.
+[Sadowski et al. studied 9 million reviewed changes](https://research.google/pubs/modern-code-review-a-case-study-at-google/)
+and describe a system built on small changes, one reviewer by default, and heavy tooling. No
+committee reads every line.
 
 Naming conventions. Cyclomatic complexity limits. "This function is doing too much." "Can we extract this?" These are the greatest hits of the six-hour review, and here's the thing — a linter and a static analyzer already catch the ones that matter, automatically, in CI, in seconds. I don't need a human being to be the linter. I *have* a linter.
 
@@ -101,7 +114,9 @@ It's self-correcting. Ship good work and you keep your speed. Ship sloppy work a
 
 **"Juniors need mentorship."** Yes — and mentorship is a deliberate, opt-in review, exactly the escape hatch above. Pair on the scary stuff. Review the learning moments. That's not the same as gating every senior's trivial PR behind a queue.
 
-**"Compliance requires review."** Then those repos require review, and you scope it there. Sensitive systems, regulated code, the database migrations — those get the second look *by design*. Everything else doesn't have to inherit that ceremony.
+**"Compliance requires review."** Then those repos require review, and you scope it there. DORA
+makes the same point from the compliance side: peer review plus automated checks satisfies
+separation of duties more reliably than an external approval board. Sensitive systems, regulated code, the database migrations — those get the second look *by design*. Everything else doesn't have to inherit that ceremony.
 
 ## Ship it
 

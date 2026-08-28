@@ -1,0 +1,68 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.shubhamrandive.com"
+        }
+      ],
+      "destination": "https://shubhamrandive.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/about",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/product",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/pricing",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/table-intelligence",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/login",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/signup",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/docs",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
+}

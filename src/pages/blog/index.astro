@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
 import { getCollection } from 'astro:content';
+import { SITE, AUTHOR, PERSON } from '../../consts';
 
 const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -9,10 +10,39 @@ const posts = (await getCollection('blog')).sort(
 
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${SITE}/blog#blog`,
+    url: `${SITE}/blog`,
+    name: `${AUTHOR} — Blog`,
+    description:
+      'Essays on AI agents, machine learning and the practicalities of shipping software.',
+    inLanguage: 'en',
+    author: { '@id': `${SITE}/#person` },
+    publisher: { '@id': `${SITE}/#person` },
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      '@id': `${SITE}/blog/${post.id}#article`,
+      headline: post.data.title,
+      url: `${SITE}/blog/${post.id}`,
+      datePublished: post.data.date.toISOString(),
+      description: post.data.description,
+      author: { '@id': `${SITE}/#person` },
+    })),
+  },
+  { '@context': 'https://schema.org', ...PERSON },
+];
 ---
 
-<Layout title="Blog — Shubham Randive" description="Writing on data science, AI agents, and building products.">
-  <Nav minimal active="Blog" />
+<Layout
+  title="Blog — AI Agents, Data Science and Shipping Software"
+  description="Essays by Shubham Randive on building AI agents, doing data science on real datasets, and the unglamorous parts of shipping software that works."
+  schema={schema}
+>
+  <Nav active="Blog" />
   <header class="blog-head">
     <h1>Blog</h1>
     <p class="muted">Thinking out loud about data science, AI agents, and building things that ship.</p>
@@ -25,7 +55,7 @@ const fmt = (d: Date) =>
       {posts.map((post) => (
         <li class="post">
           <div class="post-top">
-            <a class="post-title" href={`/blog/${post.id}/`}>{post.data.title}</a>
+            <a class="post-title" href={`/blog/${post.id}`}>{post.data.title}</a>
             <time datetime={post.data.date.toISOString()}>{fmt(post.data.date)}</time>
           </div>
           {post.data.description && <p class="post-desc muted">{post.data.description}</p>}

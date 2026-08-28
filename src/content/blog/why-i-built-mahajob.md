@@ -1,5 +1,5 @@
 ---
-title: "Why I built mahajob.in"
+title: "Why I built mahajob.in, a job board for local hiring"
 date: 2026-07-11
 description: "The unglamorous corner of India's job market that the big portals forgot — and why AI finally made it worth solving."
 ---

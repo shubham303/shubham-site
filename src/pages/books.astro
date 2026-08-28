@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
 
 // Books / resources worth mentioning. Add to these lists as you read.
 // Swap the Amazon links for your affiliate links if/when you have them.
@@ -76,8 +77,11 @@ const tech = [
 ];
 ---
 
-<Layout title="Books — Shubham Randive" description="Books and resources that shaped how I think and work.">
-  <p class="back"><a href="/">← Home</a></p>
+<Layout
+  title="Books — What I Read on ML, Systems and Building"
+  description="The books, courses and guides that shaped how Shubham Randive thinks about machine learning, distributed systems, API security and building small products."
+>
+  <Nav active="Books" />
 
   <h1>Books</h1>
   <p class="intro">

@@ -1,7 +1,7 @@
 ---
-title: "I pointed one AI agent at ten public datasets — here's what it found"
+title: "One AI agent, ten public datasets: what it found"
 date: 2026-07-18
-description: "One unchanged pipeline — load, profile, test, model, explain — run across ten open datasets. Each section pairs a plain-language business read with the full technical report."
+description: "One unchanged pipeline — load, profile, test, model, explain — run across ten open datasets, with a plain-language read and the full technical report for each."
 ---
 
 > Worked examples on **public, open datasets** — no client or private data. This is the
@@ -11,6 +11,13 @@ I've been building a data agent that does the boring-but-hard part of analysis o
 it loads a table, profiles every column, tests which relationships are real, models the
 outcome you care about, and then — the part that actually matters — turns all of that into
 a few sentences a decision-maker can act on. One question in, one clear answer out.
+
+## The short version
+
+- **One pipeline, ten datasets, no tuning.** Load → profile → test → model → explain, run unchanged on restaurants, shipwrecks, houses, diamonds, penguins, wine, cars, biopsies, air quality and the US economy.
+- **The honest answer is usually simpler than the expected one.** Check size decides the tip. Location and income decide the house price. Carat decides the diamond.
+- **Knowing when to stop is a feature.** On a 32-row table the agent refuses to ship a predictive model rather than reporting a flattering score (§7).
+- **Every dataset below is public and linked**, so you can re-run any of it yourself.
 
 To show what that looks like, I ran the *same pipeline, unchanged* across ten well-known
 public datasets — restaurants, real estate, cars, wine, biology, the economy. Each section
@@ -62,6 +69,11 @@ that the same machine gets to a usable answer on wildly different data.
 
 
 ## 1. Restaurant tipping — what actually decides the tip
+
+**The size of the check decides the tip, and almost nothing else does.** Party size nudges it slightly; day of week, shift, smoking and the diner's gender make no practical difference. To grow tips, grow the check.
+
+*Dataset: [`tips`](https://github.com/mwaskom/seaborn-data/blob/master/tips.csv) (seaborn, from Bryant & Smith, 1995) — 244 checks.*
+
 
 <div class="tir">
   
@@ -139,6 +151,11 @@ The folklore of the &ldquo;good table&rdquo; mostly evaporates: the lever is che
 
 ## 2. Titanic — what decided who survived
 
+**Sex decided who survived the Titanic, and ticket class decided the rest.** Being female moved the odds more than any other variable; travelling first class helped on top of that. Age barely mattered once those two were known.
+
+*Dataset: [Titanic passenger list](https://www.openml.org/d/40945) (OpenML) — 891 passengers.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · Titanic survival</div>
   <h3>Who survived the Titanic — and what actually decided it</h3>
@@ -181,6 +198,11 @@ A crisis governed by a rule leaves a clean signature in the data; you don't need
 
 ## 3. California housing — what sets a home's price
 
+**Where a California home sits and how wealthy its neighbourhood is set almost the whole price.** Latitude, longitude and median income together explain the vast majority of the variation. The age of the house barely registers.
+
+*Dataset: [California Housing](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html) (scikit-learn, 1990 US Census) — 20,640 block groups.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · California housing</div>
   <h3>What really sets a California home's price</h3>
@@ -221,6 +243,11 @@ Location and neighbourhood income are the whole game; property details move pric
 
 ## 4. Diamonds — what a price is made of
 
+**A diamond's price is mostly its size.** Carat weight and physical dimensions carry it; clarity and colour fine-tune it; cut grade barely moves it at all. The agent predicts price to within a few hundred dollars.
+
+*Dataset: [`diamonds`](https://ggplot2.tidyverse.org/reference/diamonds.html) (ggplot2) — 53,940 stones.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · Diamond pricing</div>
   <h3>What a diamond's price is really made of</h3>
@@ -260,6 +287,11 @@ Size dominates; clarity and colour fine-tune; cut grade — the thing shoppers o
 ---
 
 ## 5. Penguins — identifying species from a ruler
+
+**A handful of ruler measurements and the island a bird was seen on identify three penguin species almost perfectly.** The agent labels them correctly 98% of the time.
+
+*Dataset: [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) (Horst, Hill & Gorman) — 344 birds.*
+
 
 <div class="tir">
   <div class="tir-tag">Automated analysis · Penguin species</div>
@@ -303,6 +335,11 @@ Cheap measurements beat expensive ones: a few body measures and a location note 
 
 ## 6. Wine — separating varieties by chemistry
 
+**Three grape varieties separate perfectly on chemistry alone — zero misclassifications.** A handful of compounds (flavanoids, proline, colour intensity) do all the work.
+
+*Dataset: [Wine recognition](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_wine.html) (scikit-learn, UCI) — 178 wines.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · Wine cultivars</div>
   <h3>Separating three wine varieties by chemistry alone</h3>
@@ -345,6 +382,11 @@ Three compounds tell three grape varieties apart with zero errors — a short te
 
 ## 7. Cars — and knowing when NOT to trust a model
 
+**Weight and engine power drive fuel economy, and 32 cars is too little data to predict it.** The relationships are strong and clear. The agent says so, then refuses to ship a model it cannot stand behind.
+
+*Dataset: [`mtcars`](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html) (R datasets, *Motor Trend* 1974) — 32 cars.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · Car fuel economy</div>
   <h3>What drives fuel economy — and why the agent won't overclaim on 32 cars</h3>
@@ -382,6 +424,11 @@ The levers (weight, power) are obvious, but the agent refuses to build a confide
 ---
 
 ## 8. Breast-cancer biopsies — flagging malignancy
+
+**Cell size and shape separate malignant from benign biopsies with about 98% accuracy.** The strongest signals are the worst-case irregularities in a sample: the most abnormal cells give it away.
+
+*Dataset: [Breast Cancer Wisconsin (Diagnostic)](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) (scikit-learn, UCI) — 569 biopsies.*
+
 
 <div class="tir">
   <div class="tir-tag">Automated analysis · Breast-cancer diagnosis</div>
@@ -423,6 +470,11 @@ About 98% accuracy from cell-shape measurements — strong decision-support, wit
 
 ## 9. Air quality — seeing bad-air days coming
 
+**Ground-level ozone is a weather story: it climbs with heat and sunlight and falls with wind.** Temperature is the single biggest driver, and the agent predicts ozone from weather alone with about 79% accuracy.
+
+*Dataset: [`airquality`](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/airquality.html) (R datasets, New York, May–Sep 1973) — 153 days.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · Urban air quality</div>
   <h3>What drives ground-level ozone — and how to see bad-air days coming</h3>
@@ -463,6 +515,11 @@ Ground-level ozone is mostly a weather story: hot, still and sunny is the high-o
 
 ## 10. The US economy — 48 years of unemployment
 
+**US unemployment moves in regimes, not a smooth drift.** Across 48 years the agent found 11 sharp structural breaks. They land on the known recessions: 1975, 1982, 1990, 2001, 2008. The series rose 34% across the span, and the near-term forecast points down.
+
+*Dataset: [`economics`](https://ggplot2.tidyverse.org/reference/economics.html) (ggplot2, from FRED [`UNRATE`](https://fred.stlouisfed.org/series/UNRATE)) — 574 monthly readings, 1967–2015.*
+
+
 <div class="tir">
   <div class="tir-tag">Automated analysis · US economy</div>
   <h3>48 years of US unemployment — the shifts that actually matter</h3>
@@ -495,6 +552,20 @@ The series moves in regimes, not a smooth drift; the agent finds the 11 breaks �
 ---
 
 That's the through-line across all ten: the honest answer is usually simpler than the one people expect, it points at a decision you can act on, and — when the data can't support a claim — the agent says so instead of inventing one. The value isn't a cleverer model. It's getting to that one sentence fast, on any table you hand it.
+
+
+## Sources and further reading
+
+Every dataset above is public, and each section links its source. The tooling underneath:
+
+| Piece | What it does | Source |
+| --- | --- | --- |
+| scikit-learn | Models, held-out splits, scoring | [scikit-learn.org](https://scikit-learn.org/stable/) |
+| statsmodels | Statistical tests, ARIMA, seasonal decomposition | [statsmodels.org](https://www.statsmodels.org/stable/index.html) |
+| ruptures | Change-point (structural break) detection | [centre-borelli.github.io/ruptures-docs](https://centre-borelli.github.io/ruptures-docs/) |
+| Model Context Protocol | How the agent reaches the analysis tools | [modelcontextprotocol.io](https://modelcontextprotocol.io/) |
+
+Anthropic's [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) draws the line I use. A workflow orchestrates tools through predefined code paths; an agent directs its own. The pipeline above is deliberately the first kind. When someone is going to act on the answer, reproducible beats clever.
 
 
 *I'm a data scientist — if you've got a pile of data and a decision hiding in it, [get in touch](mailto:randiveshubham3@gmail.com).*
