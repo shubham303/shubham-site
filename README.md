@@ -1,62 +1,50 @@
-# shubham-site
+# shubhamrandive.com
 
-**Live:** https://shubhamrandive.com
+Shubham Randive's personal site: an about page and a blog. Static Astro, deployed on Vercel.
 
-Personal-brand site — a single landing page (bio, photo, links) plus a Markdown blog.
-Built with [Astro](https://astro.build), deployed on Vercel, styled to feel like a clean
-GitHub README. No forms, no tracking, no CSS framework.
+## Run it
 
-## Run locally
-
-```bash
+```sh
 npm install
 npm run dev      # http://localhost:4321
-npm run build    # static output in dist/
+npm run build    # -> dist/
 ```
 
-## Add a blog post
+## Layout
 
-Drop a Markdown file in `src/content/blog/`, e.g. `my-post.md`:
-
-```markdown
----
-title: "My post title"
-date: 2026-07-15
-description: "One line for SEO / social previews."
----
-
-Your content in Markdown.
+```
+src/
+  consts.ts              site host, author identity, profile links (also feeds the Person schema)
+  layouts/Layout.astro   <head>, canonical URL, JSON-LD, theme toggle, global CSS
+  components/Nav.astro   Home · Blog · Books
+  content/blog/*.md      the posts
+  content.config.ts      blog frontmatter schema (title, date, description)
+  pages/
+    index.astro          home — bio, writing list, projects
+    blog/index.astro     post index
+    blog/[...slug].astro one post (BlogPosting + BreadcrumbList JSON-LD)
+    books.astro          books and resources
+public/robots.txt        points crawlers at the sitemap
+vercel.json              www -> apex, trailing-slash and legacy-path redirects
 ```
 
-Commit and push — Vercel rebuilds and deploys automatically. The post shows up in the
-list on the home page, sorted newest-first.
+## Adding a post
 
-(With Claude Code: "add a blog post about X" → it writes the file → commit + push.)
+Drop a Markdown file in `src/content/blog/`:
 
-## Edit the essentials
+```md
+---
+title: "Something specific, 40–60 characters"
+date: 2026-08-28
+description: "One sentence, 70–160 characters, that gives someone a reason to click."
+---
+```
 
-- **Bio + links** (email, LinkedIn, Substack, GitHub): `src/pages/index.astro`.
-- **Your photo**: replace `public/photo.svg` with a real `public/photo.jpg` and update the
-  `src="/photo.svg"` reference in `src/pages/index.astro`.
-- **Domain**: set `site` in `astro.config.mjs` to your real domain (used for the sitemap).
+The slug is the filename. It appears in the index, the sitemap and the home page automatically.
 
-## Deploy to Vercel
+## URL conventions
 
-1. Push this to its **own** GitHub repo (keep it separate from any product/private repo).
-2. In Vercel: New Project → import the repo. Vercel auto-detects Astro — no config needed.
-3. Add your custom domain in the project's Domains settings.
-
-## Roadmap / planned
-
-- **Newsletter (Buttondown + RSS-to-email).** Own the subscriber list (exportable, unlike
-  Substack) and auto-email subscribers whenever a new post publishes. Steps when ready:
-  1. Add an RSS feed to the site (`@astrojs/rss`) — the trigger Buttondown watches.
-  2. Create a Buttondown account and connect it to the feed for RSS-to-email.
-  3. Add a "Subscribe" link (to Buttondown's hosted page) or embed its form in
-     `src/pages/index.astro`.
-
-## Content rules
-
-Only publish open-dataset or anonymized findings — never a named prospect's teardown or any
-client/private data. See the content guide in the TableIntelligence repo
-(`.claude/skills/data-teardown-outreach/references/content_creation_guide.md`).
+One canonical shape for every page: `https://shubhamrandive.com/path`, apex host, no trailing
+slash. `vercel.json` 301s `www.` and 308s the slashed form; `Layout.astro` emits a matching
+`<link rel="canonical">`; the sitemap uses the same shape. Changing a live post's slug costs a
+redirect, so don't — pick the slug once.

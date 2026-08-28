@@ -1,45 +1,106 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
-import { getCollection, render } from 'astro:content';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { SITE, AUTHOR, PERSON } from '../../consts';
 
-// Server-rendered (not prerendered) so the shared Nav can read auth state.
-// The rest of the site is SSR-first; Vercel caches the rendered output.
-export const prerender = false;
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
 
-const slug = Astro.params.slug as string;
-const posts = await getCollection('blog');
-const post = posts.find((p) => p.id === slug);
-if (!post) return new Response('Not found', { status: 404 });
+const { post } = Astro.props as { post: CollectionEntry<'blog'> };
 const { Content } = await render(post);
 
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+const url = `${SITE}/blog/${post.id}`;
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    '@id': `${url}#article`,
+    headline: post.data.title,
+    description: post.data.description,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    datePublished: post.data.date.toISOString(),
+    dateModified: post.data.date.toISOString(),
+    inLanguage: 'en',
+    author: { '@id': `${SITE}/#person` },
+    publisher: { '@id': `${SITE}/#person` },
+    isPartOf: { '@id': `${SITE}/blog#blog` },
+  },
+  { '@context': 'https://schema.org', ...PERSON },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE}/blog` },
+      { '@type': 'ListItem', position: 3, name: post.data.title, item: url },
+    ],
+  },
+];
 ---
 
-<Layout title={post.data.title} description={post.data.description}>
-  <Nav minimal />
+<Layout
+  title={post.data.title}
+  description={post.data.description ?? `${post.data.title} — an essay by ${AUTHOR}.`}
+  type="article"
+  schema={schema}
+>
+  <Nav active="Blog" />
   <article>
     <h1>{post.data.title}</h1>
-    <time datetime={post.data.date.toISOString()}>{fmt(post.data.date)}</time>
+    <p class="byline">
+      By <a href="/" rel="author">{AUTHOR}</a> ·
+      <time datetime={post.data.date.toISOString()}>{fmt(post.data.date)}</time>
+    </p>
     <div class="content">
       <Content />
     </div>
   </article>
+  <p class="back"><a href="/blog">← All posts</a></p>
 </Layout>
 
 <style>
   article h1 {
     margin-bottom: 0.35rem;
   }
-  time {
+  .byline {
     color: var(--muted);
     font-size: 0.9em;
+    margin-top: 0;
   }
   .content {
     margin-top: 1.75rem;
   }
   .content :global(h2) {
     margin-top: 2rem;
+  }
+  .content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    font-size: 0.95em;
+    display: block;
+    overflow-x: auto;
+  }
+  .content :global(th),
+  .content :global(td) {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .content :global(th) {
+    background: var(--code-bg);
+  }
+  .back {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
   }
 </style>

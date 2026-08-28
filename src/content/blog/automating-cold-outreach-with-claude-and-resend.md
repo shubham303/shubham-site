@@ -1,8 +1,19 @@
 ---
-title: "I automated my cold outreach with an AI agent, and it fixed its own mistakes"
+title: "Automating cold outreach with a self-correcting AI agent"
 date: 2026-07-18
 description: "Research, write, send, check, recover — an AI agent ran my whole cold-email pipeline using Claude, Resend, and a domain I already owned. Cost: zero."
 ---
+
+**An AI agent ran my whole cold-outreach pipeline on three tools I already had, for nothing.** Research, write, send, verify, recover. The sending is the boring part. The part worth writing about is what happened when one address bounced: the agent noticed, found the real address, and resent.
+
+## The stack
+
+| Piece | Job | Cost |
+| --- | --- | --- |
+| [Claude](https://claude.com/product/claude-code) | Operator — researches, writes, sends, checks, recovers | Existing subscription |
+| [Resend](https://resend.com/docs/introduction) | Sends and receives mail via one API call | Free tier |
+| [Model Context Protocol](https://modelcontextprotocol.io/) | How Claude reaches those tools | Open standard |
+| My own domain | Sender identity, [SPF and DKIM](https://support.google.com/a/answer/81126) | Already owned |
 
 Every solo consultant hears the same advice: **do cold outreach.** And it's good advice. The
 trouble is that outreach done well is a grind — find the businesses, research each one, write
@@ -19,8 +30,19 @@ three things I already had: **Claude** as the operator, **Resend** as the mail e
 The trick isn't asking a chatbot to "write me a cold email." It's giving the model *hands*.
 Through the Model Context Protocol, Claude can call real tools inside one conversation — search
 the web, read my local files, send mail through Resend, check whether it landed. Once it can
-act, the whole pipeline collapses into a single flow: research a company, write the email, send
-it, verify delivery, fix what broke — with me never touching the keyboard between steps.
+act, the whole pipeline collapses into a single flow, and I never touch the keyboard between
+steps:
+
+1. **Find and qualify** businesses worth contacting, to a playbook I wrote once.
+2. **Research each one** and write the findings out as Markdown — one file per company.
+3. **Draft** an email from those notes, one natural opening line and nothing more.
+4. **Send** through Resend, one API call per prospect.
+5. **Verify** delivery status on every message.
+6. **Recover** — re-research and resend anything that bounced.
+
+Steps 1 through 5 are a workflow. Step 6 is what makes it an agent. Anthropic
+[puts it this way](https://www.anthropic.com/engineering/building-effective-agents): a workflow
+follows predefined code paths, an agent directs its own.
 
 And the prospecting itself is Claude's job too, not mine. I taught it the playbook once — how I
 like to find businesses worth contacting, qualify them, and note the right decision-maker — and
@@ -36,7 +58,10 @@ official MCP server, so all of that shows up to Claude as callable tools.
 
 The domain is the quiet hero. Sending from my own address instead of a `@gmail.com` does two
 things at once. With SPF and DKIM verified, mailbox providers trust the mail — nearly every
-recipient in my batch accepted it on the first try. And the sender, the signature, and the
+recipient in my batch accepted it on the first try. That part is now mandatory.
+[Google's sender guidelines](https://support.google.com/a/answer/81126) require SPF or DKIM of
+*every* sender, and a spam-complaint rate under 0.3%. Cross 5,000 messages a day and you also
+owe them DMARC and one-click unsubscribe. And the sender, the signature, and the
 portfolio link all match, so to the person reading it, this is obviously one real human. Because
 it is.
 
@@ -78,11 +103,18 @@ The cost is basically nothing. The bottleneck moved from *doing* outreach to *de
 reach and what to say* — which is exactly the part I should keep. And quality went *up*, because
 the tedious steps humans skip out of boredom are the ones an agent does every single time.
 
-A few honest caveats, because this is easy enough to abuse. Send to real, relevant people — this
-is a precision tool, not a spam cannon, and pointing it at 10,000 scraped strangers just torches
-your domain and makes you the thing everyone hates. Verify addresses when you can. And keep
-yourself in the loop on strategy: the agent wrote and sent, but I chose the pitch, the list, and
-the tone. That judgment is the actual work.
+A few honest caveats, because this is easy enough to abuse:
+
+- **Send to real, relevant people.** This is a precision tool, not a spam cannon. Pointing it at
+  10,000 scraped strangers torches your domain and makes you the thing everyone hates.
+- **Verify addresses when you can.** A guessed address bounces, and every bounce feeds your
+  [sender reputation](https://support.google.com/a/answer/81126).
+- **Know the rules you are sending under.** In the US that is
+  [CAN-SPAM](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business);
+  if any recipient is in the EU, [GDPR](https://gdpr-info.eu/art-6-gdpr/) governs whether you may
+  contact them at all.
+- **Stay in the loop on strategy.** The agent wrote and sent, but I chose the pitch, the list and
+  the tone. That judgment is the actual work.
 
 I didn't build a product or write a line of application code. I connected three things I already
 had and described the outcome I wanted. The agent did the rest. The interesting future of AI at

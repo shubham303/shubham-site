@@ -4,6 +4,18 @@ date: 2026-06-06
 description: "A room full of people thinking out loud, all at once, is the worst environment for thinking. Write first. Read first. Then meet."
 ---
 
+**Most decision meetings fail for a structural reason, not a human one: they ask a room to think out loud, in real time, all at once.** Move the thinking into a written document that circulates first, and the meeting stops being a debate and becomes a review.
+
+## The short version
+
+| | Meeting-first | Document-first |
+| --- | --- | --- |
+| Where thinking happens | In the room, under time pressure | At a desk, before the room |
+| Who tends to win | Loudest, fastest, most senior | Whoever's argument survives being written down |
+| Cost of a bad idea | Eight people's afternoon | The author's own hour |
+| What the meeting is for | Generating and deciding | Resolving the doubts the document surfaced |
+| Objections you get | Reflexive | Considered |
+
 Someone on your team has a decision to make. How to fix a nasty bug. Which way to structure a service. Whether to build the thing at all. And almost on reflex, the same sentence comes out:
 
 *"Let's just hop on a call."*
@@ -28,7 +40,11 @@ Here's the part that should bother you most. How many times have you sat in a me
 
 The fix isn't to abolish meetings. It's to stop using them as the place where thinking *happens* and start using them as the place where thinking gets *tested.*
 
-This is the idea Amazon is famous for. Before a meeting where something is being proposed or decided, the person driving it writes a document. Not bullet points — a real, structured argument. What they're proposing. Why. The trade-offs. The corner cases. The ways it could fail. An honest comparison against the alternatives, including the ones they're rejecting and why. They refine it until it actually holds up.
+This is the idea Amazon is famous for. Jeff Bezos put it plainly in the [2017 letter to shareholders](https://www.aboutamazon.com/news/company-news/2017-letter-to-shareholders): "We don't do PowerPoint (or any other slide-oriented) presentations at Amazon. Instead, we write narratively structured six-page memos." The room reads them in silence at the start of the meeting — study hall, he called it. He is blunt about the cost, too. A good memo takes a week, because you write it, share it, set it aside, and rewrite it.
+
+37signals reaches the same conclusion from the other direction. Their [communication guide](https://37signals.com/how-we-communicate) makes it a rule: "Meetings are the last resort, not the first option." The reason sits one line below. "Writing solidifies, chat dissolves."
+
+Before a meeting where something is being proposed or decided, the person driving it writes a document. Not bullet points — a real, structured argument. What they're proposing. Why. The trade-offs. The corner cases. The ways it could fail. An honest comparison against the alternatives, including the ones they're rejecting and why. They refine it until it actually holds up.
 
 Then they share it *before* the meeting, so everyone gets to do the one thing the meeting never allows: read it slowly, sit with it, poke at it, and arrive with considered objections instead of reflexive ones.
 
@@ -63,6 +79,7 @@ Same people. Same seniority gap. Completely different outcome — because the th
 - **No half-baked ideas.** If a proposal can't survive being written down honestly, it dies quietly at the author's desk instead of loudly wasting eight people's afternoon.
 - **Informed objections, not reflexive ones.** Everyone arrives having actually processed the idea. Their pushback is nuanced because they've had time to make it nuanced.
 - **No fifteen-minute context dump.** The document already told everyone what the meeting is about. People show up having *thought about it*, not hearing it for the first time.
+- **It removes production blocking.** One person talks; everyone else queues instead of thinks. [Diehl and Stroebe named this in 1987](https://doi.org/10.1037/0022-3514.53.3.497) as the main reason brainstorming groups underperform the same people working alone. A document lets everyone speak at once.
 - **The quiet, correct person gets heard.** The engineer who needs an hour to assemble the killer argument now has that hour — in writing, where confidence and volume don't decide who's right.
 
 ## The one caveat

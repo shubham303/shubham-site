@@ -6,6 +6,8 @@ description: "Why 'one skill per use case' is going to collapse under its own we
 
 ## Why "one skill per use case" is going to collapse under its own weight — and what to build instead
 
+**Most "agents" shipping today are workflows in a costume.** The habit that produces them — one skill per use case — collapses as the use cases multiply. Build three tiers instead: deterministic tools, atomic skills that each teach one thing, and prompts that compose them at runtime.
+
 If you've worked on an LLM-powered product for more than a few weeks, you've probably had this argument: *What actually is a "skill"? How is it different from a script, or a tool, or an "agent"?* Everyone nods along, and then the next pull request ships a "skill" that turns out to be a Python script wearing a markdown costume.
 
 I want to make a case that this confusion isn't cosmetic. It points at a structural mistake in how a lot of teams (mine included) are building these systems. The short version: **we keep writing one self-contained workflow per use case, calling each one a skill, and telling ourselves we've built an agent.** We haven't. And the approach is going to scale badly.
@@ -25,11 +27,15 @@ If an LLM appears in a workflow at all, it's doing one of two narrow jobs:
 
 The **control flow is fixed.** The model doesn't decide what happens next. The workflow does.
 
+Anthropic draws the same line in [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents): workflows are "systems where LLMs and tools are orchestrated through predefined code paths". Their advice bears repeating. Find the simplest thing that works, and reach for an agent only when the extra latency and cost buy you something.
+
 ### Agent
 
 An **agent** is the opposite. Given a goal, the model picks the next action, looks at the result, and decides what to do next. The control flow is **determined by the model**, not by your code.
 
-The model has a set of tools available (APIs, MCP servers, scripts, `bash`, `curl`). It has a set of skills telling it how to use those tools correctly. But the *order* in which it composes them is decided at runtime, based on the goal.
+Anthropic's definition is the same: agents are "systems where LLMs dynamically direct their own processes and tool usage, maintaining control over how they accomplish tasks."
+
+The model has a set of tools available (APIs, [MCP servers](https://modelcontextprotocol.io/), scripts, `bash`, `curl`). It has a set of skills telling it how to use those tools correctly. But the *order* in which it composes them is decided at runtime, based on the goal.
 
 ### Skill
 
@@ -119,6 +125,8 @@ Whatever the destination platform looks like, the unit it will care about is **t
 ## The alternative: three tiers
 
 The fix is a strict three-tier layering, with one rule: **higher tiers compose from lower tiers, never the reverse.**
+
+The tier boundaries match where the industry has already standardised. Tier 1 is what the [Model Context Protocol](https://modelcontextprotocol.io/) exposes: a tool with a typed schema that any client can call. Tier 2 is what [Agent Skills](https://code.claude.com/docs/en/skills) package: prose plus optional scripts, loaded only when relevant. Tier 3 is yours.
 
 ### Tier 1 — Tools (atomic, deterministic, no LLM)
 

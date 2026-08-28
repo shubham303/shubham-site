@@ -1,22 +1,25 @@
 # build output
 dist/
-.output/
-
-# deps
-node_modules/
-
-# astro
 .astro/
 
-# env / editor / os
-.env
-.env.production
-.DS_Store
-.vscode/
-.vercel
+# dependencies
+node_modules/
 
-# agent tooling (Neon skill, etc.)
+# env
+.env
+.env.*
+!.env.example
+
+# platform
+.vercel/
+.neon/
+
+# agent/tooling
 .agents/
+.codex/
 .zcode/
-.neon
-skills-lock.json
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
