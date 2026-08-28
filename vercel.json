@@ -4,6 +4,17 @@
   "cleanUrls": true,
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.shubhamrandive.com"
+        }
+      ],
+      "destination": "https://shubhamrandive.com/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
