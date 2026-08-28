@@ -9,8 +9,8 @@ interface Props {
 }
 const { title, description, type = 'website', schema } = Astro.props;
 
-// One canonical shape for every URL: absolute, on the apex host, no trailing
-// slash (Vercel 308s the slashed and www forms to this one).
+// One canonical shape for every URL: absolute, on the www host, no trailing
+// slash (Vercel 308s the slashed and apex forms to this one).
 const path =
   Astro.url.pathname
     .replace(/\.html$/, '')

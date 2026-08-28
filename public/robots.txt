@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://shubhamrandive.com/sitemap-index.xml
+Sitemap: https://www.shubhamrandive.com/sitemap-index.xml

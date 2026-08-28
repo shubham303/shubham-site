@@ -1,6 +1,6 @@
 // Site-wide constants: one place for the canonical host, the author identity and
 // the profile links that appear both in the page footer and in the Person schema.
-export const SITE = 'https://shubhamrandive.com';
+export const SITE = 'https://www.shubhamrandive.com';
 export const AUTHOR = 'Shubham Randive';
 export const EMAIL = 'randiveshubham3@gmail.com';
 

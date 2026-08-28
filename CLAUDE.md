@@ -16,8 +16,8 @@ Shubham Randive, and the blog.
 
 ## Conventions
 
-- **One canonical URL shape:** apex host, no trailing slash. `astro.config.mjs` sets
-  `trailingSlash: 'never'` and `build.format: 'file'`; `vercel.json` redirects `www.` and the
+- **One canonical URL shape:** www host, no trailing slash. `astro.config.mjs` sets
+  `trailingSlash: 'never'` and `build.format: 'file'`; `vercel.json` redirects the apex host and the
   slashed form; `Layout.astro` strips `.html`/`/index` before emitting the canonical.
 - **Every page passes `title` and `description`.** Titles 40–60 characters, descriptions 70–160 —
   outside that range search results either truncate or say nothing.

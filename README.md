@@ -25,7 +25,7 @@ src/
     blog/[...slug].astro one post (BlogPosting + BreadcrumbList JSON-LD)
     books.astro          books and resources
 public/robots.txt        points crawlers at the sitemap
-vercel.json              www -> apex, trailing-slash and legacy-path redirects
+vercel.json              apex -> www, trailing-slash and legacy-path redirects
 ```
 
 ## Adding a post
@@ -44,7 +44,7 @@ The slug is the filename. It appears in the index, the sitemap and the home page
 
 ## URL conventions
 
-One canonical shape for every page: `https://shubhamrandive.com/path`, apex host, no trailing
-slash. `vercel.json` 301s `www.` and 308s the slashed form; `Layout.astro` emits a matching
+One canonical shape for every page: `https://www.shubhamrandive.com/path`, www host, no trailing
+slash. `vercel.json` 308s the apex host and the slashed form; `Layout.astro` emits a matching
 `<link rel="canonical">`; the sitemap uses the same shape. Changing a live post's slug costs a
 redirect, so don't — pick the slug once.
