@@ -1,4 +1,15 @@
 User-agent: *
 Allow: /
 
+# The job site (MahaJob) is served from /mahajob by the sanglirojgar project.
+# robots.txt is only read from the domain root, so its crawl rules live here.
+Disallow: /mahajob/admin
+Disallow: /mahajob/api/
+Disallow: /mahajob/account
+Disallow: /mahajob/my-ads
+Disallow: /mahajob/seeker/
+Disallow: /mahajob/employer/*/profile
+Disallow: /mahajob/job/*/edit
+
 Sitemap: https://www.shubhamrandive.com/sitemap.xml
+Sitemap: https://www.shubhamrandive.com/mahajob/sitemap.xml

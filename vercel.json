@@ -85,5 +85,15 @@
       "destination": "/",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/mahajob",
+      "destination": "https://sanglirojgar.vercel.app/mahajob"
+    },
+    {
+      "source": "/mahajob/:path*",
+      "destination": "https://sanglirojgar.vercel.app/mahajob/:path*"
+    }
   ]
 }
