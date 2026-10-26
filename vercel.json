@@ -84,16 +84,16 @@
       "source": "/dashboard/:path*",
       "destination": "/",
       "permanent": true
-    }
-  ],
-  "rewrites": [
+    },
     {
       "source": "/mahajob",
-      "destination": "https://sanglirojgar.vercel.app/mahajob"
+      "destination": "https://mahajob.in/",
+      "permanent": true
     },
     {
       "source": "/mahajob/:path*",
-      "destination": "https://sanglirojgar.vercel.app/mahajob/:path*"
+      "destination": "https://mahajob.in/",
+      "permanent": true
     }
   ]
 }

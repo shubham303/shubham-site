@@ -12,7 +12,7 @@ Shubham Randive, and the blog.
 - `src/components/Nav.astro` — Home · Blog · Books.
 - `src/content/blog/*.md` — posts. Frontmatter schema in `src/content.config.ts`.
 - `src/pages/` — `index.astro` (home), `blog/index.astro`, `blog/[...slug].astro`, `books.astro`.
-- `public/robots.txt`, `vercel.json` — crawler and redirect config.
+- `public/robots.txt`, `vercel.json` — crawler and redirect config. `/mahajob/*` 301s to mahajob.in, which is its own repo (sanglirojgar) on its own domain.
 
 ## Conventions
 
